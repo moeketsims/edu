@@ -3860,12 +3860,13 @@ def get_graduation_analysis(
     offset: int = 0
 ) -> Dict[str, Any]:
     """
-    Get potential graduates - students with no missing modules who are registered for final modules
+    Get potential graduates - students with no missing modules who are in final academic years
     """
     try:
         print(f"🎓 Starting graduation analysis...")
         
-        # Base query to find students with no missing modules
+        # Base query to find students with no missing modules who are in final years
+        # Use 2025 as the most recent year (likely final year students)
         base_query = """
             SELECT DISTINCT s.student_number, s.name, s.campus_name, s.plan_code, s.plan_description
             FROM students s
@@ -3873,6 +3874,7 @@ def get_graduation_analysis(
                 SELECT 1 FROM missing_modules mm 
                 WHERE mm.student_number = s.student_number
             )
+            AND s.year = '2025'
         """
         
         params = {}
@@ -3910,8 +3912,10 @@ def get_graduation_analysis(
         # Get detailed information for each potential graduate
         potential_graduates = []
         for row in results:
-            # Get academic level from comprehensive analysis
-            analysis = DataLoaderService.get_comprehensive_student_analysis(db, row.student_number)
+            # Determine academic level based on plan code (4th for regular, 5th for extended)
+            current_academic_level = "4th"  # Default for regular programs
+            if row.plan_code and 'E' in row.plan_code:
+                current_academic_level = "5th"  # Extended programs
             
             # Get current modules (in progress)
             current_modules_query = """
@@ -3955,7 +3959,7 @@ def get_graduation_analysis(
                 "campus_name": row.campus_name,
                 "plan_code": row.plan_code,
                 "plan_description": row.plan_description,
-                "academic_level": analysis.get("current_academic_level", "Unknown"),
+                "academic_level": current_academic_level,
                 "completion_percentage": completion_percentage,
                 "total_modules_passed": passed_modules,
                 "total_modules": total_modules,
@@ -4009,96 +4013,82 @@ def get_graduation_statistics(db: Session) -> Dict[str, Any]:
     try:
         print(f"📊 Getting graduation statistics...")
         
-        # Total potential graduates (students with no missing modules)
-        total_graduates_query = """
-            SELECT COUNT(DISTINCT s.student_number) as total
+        # Get students with no missing modules in final year (2025)
+        base_query = """
+            SELECT DISTINCT s.student_number, s.name, s.campus_name, s.plan_code, s.plan_description
             FROM students s
             WHERE NOT EXISTS (
                 SELECT 1 FROM missing_modules mm 
                 WHERE mm.student_number = s.student_number
             )
+            AND s.year = '2025'
         """
-        total_graduates = db.execute(text(total_graduates_query)).scalar()
         
-        # Graduates by campus
-        campus_stats_query = """
-            SELECT s.campus_name, COUNT(DISTINCT s.student_number) as count
-            FROM students s
-            WHERE NOT EXISTS (
-                SELECT 1 FROM missing_modules mm 
-                WHERE mm.student_number = s.student_number
-            )
-            GROUP BY s.campus_name
-            ORDER BY count DESC
-        """
-        campus_stats = db.execute(text(campus_stats_query)).fetchall()
+        # Get final year graduates
+        final_year_graduates = db.execute(text(base_query)).fetchall()
         
-        # Graduates by plan code
-        plan_stats_query = """
-            SELECT s.plan_code, s.plan_description, COUNT(DISTINCT s.student_number) as count
-            FROM students s
-            WHERE NOT EXISTS (
-                SELECT 1 FROM missing_modules mm 
-                WHERE mm.student_number = s.student_number
-            )
-            GROUP BY s.plan_code, s.plan_description
-            ORDER BY count DESC
-            LIMIT 10
-        """
-        plan_stats = db.execute(text(plan_stats_query)).fetchall()
+        # Count statistics
+        campus_counts = {}
+        plan_counts = {}
+        level_counts = {}
+        graduation_ready_count = 0
         
-        # Graduates by academic level (using year field)
-        level_stats_query = """
-            SELECT s.year as academic_level, COUNT(DISTINCT s.student_number) as count
-            FROM students s
-            WHERE NOT EXISTS (
-                SELECT 1 FROM missing_modules mm 
-                WHERE mm.student_number = s.student_number
-            )
-            GROUP BY s.year
-            ORDER BY 
-                CASE s.year
-                    WHEN '1st' THEN 1
-                    WHEN '2nd' THEN 2
-                    WHEN '3rd' THEN 3
-                    WHEN '4th' THEN 4
-                    WHEN '5th' THEN 5
-                    WHEN '6th' THEN 6
-                    ELSE 7
-                END
-        """
-        level_stats = db.execute(text(level_stats_query)).fetchall()
+        for row in final_year_graduates:
+            # Count by campus
+            campus = row[2] or "Unknown"  # campus_name is the 3rd column
+            campus_counts[campus] = campus_counts.get(campus, 0) + 1
+            
+            # Count by plan
+            plan = row[3] or "Unknown"  # plan_code is the 4th column
+            plan_counts[plan] = plan_counts.get(plan, 0) + 1
+            
+            # Check if graduation ready (has final modules in progress)
+            current_modules_query = """
+                SELECT COUNT(*) as count
+                FROM student_modules sm
+                WHERE sm.student_number = :student_number
+                AND sm.final_mark = 0
+            """
+            current_modules_count = db.execute(text(current_modules_query), 
+                                             {"student_number": row[0]}).scalar()  # student_number is the 1st column
+            if current_modules_count > 0:
+                graduation_ready_count += 1
         
-        # Students with final modules (graduation ready)
-        final_modules_query = """
-            SELECT COUNT(DISTINCT s.student_number) as count
-            FROM students s
-            INNER JOIN student_modules sm ON s.student_number = sm.student_number
-            WHERE NOT EXISTS (
-                SELECT 1 FROM missing_modules mm 
-                WHERE mm.student_number = s.student_number
-            )
-            AND sm.final_mark = 0
-        """
-        graduation_ready = db.execute(text(final_modules_query)).scalar()
+        total_graduates = len(final_year_graduates)
+        
+        # Convert to list format for API response
+        campus_stats = [{"campus": campus, "count": count} for campus, count in campus_counts.items()]
+        campus_stats.sort(key=lambda x: x["count"], reverse=True)
+        
+        plan_stats = [{"plan_code": plan, "plan_description": "", "count": count} for plan, count in plan_counts.items()]
+        plan_stats.sort(key=lambda x: x["count"], reverse=True)
+        plan_stats = plan_stats[:10]  # Top 10
+        
+        # For academic level, assume 4th year for regular programs, 5th/6th for extended
+        level_counts = {"4th": 0, "5th": 0, "6th": 0}
+        for row in final_year_graduates:
+            if row[3] and 'E' in row[3]:  # plan_code is the 4th column
+                # Extended program - could be 5th or 6th year
+                level_counts["5th"] += 1
+            else:
+                # Regular program - 4th year
+                level_counts["4th"] += 1
+        
+        level_stats = [{"academic_level": level, "count": count} for level, count in level_counts.items() if count > 0]
+        level_stats.sort(key=lambda x: {
+            "1st": 1, "2nd": 2, "3rd": 3, "4th": 4, "5th": 5, "6th": 6
+        }.get(x["academic_level"], 7))
+        
+        graduation_ready = graduation_ready_count
         
         print(f"✅ Graduation statistics completed: {total_graduates} total potential graduates")
         
         return {
             "total_potential_graduates": total_graduates,
             "graduation_ready": graduation_ready,
-            "by_campus": [
-                {"campus": row.campus_name, "count": row.count}
-                for row in campus_stats
-            ],
-            "by_plan": [
-                {"plan_code": row.plan_code, "plan_description": row.plan_description, "count": row.count}
-                for row in plan_stats
-            ],
-            "by_academic_level": [
-                {"level": row.academic_level, "count": row.count}
-                for row in level_stats
-            ],
+            "by_campus": campus_stats,
+            "by_plan": plan_stats,
+            "by_academic_level": level_stats,
             "summary": {
                 "total_students": db.query(Student).count(),
                 "graduation_rate": round((total_graduates / db.query(Student).count()) * 100, 2) if db.query(Student).count() > 0 else 0,
