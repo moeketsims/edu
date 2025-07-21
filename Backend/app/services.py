@@ -1160,39 +1160,114 @@ class DataLoaderService:
             print(f"🔍 DEBUG: Plan code {plan_code} requirements check result: {plan_requirements_check}")
             
             if not plan_requirements_check:
-                # Return graceful response for undefined plan codes
-                print(f"✅ Returning graceful response for undefined plan: {plan_code}")
-                return {
-                    "student_number": student_number,
-                    "student_name": student.name,
-                    "plan_code": plan_code,
-                    "plan_description": student.plan_description,
-                    "current_year": "2024",
-                    "current_academic_level": "Unknown",
+                # Try to find a matching plan code by analyzing student's modules
+                print(f"🔍 Plan {plan_code} not found, attempting to find matching plan...")
+                
+                # Get student's modules
+                student_modules = db.query(StudentModule).filter(
+                    StudentModule.student_number == student_number
+                ).all()
+                student_module_codes = [sm.module_code for sm in student_modules]
+                
+                if student_module_codes:
+                    # Find all available plans
+                    all_plans = db.query(plan_modules.c.plan_code).distinct().all()
+                    best_match = None
+                    best_match_score = 0
                     
-                    # Summary statistics  
-                    "summary": {
-                        "total_required_modules": 0,
-                        "total_modules_passed": 0,
-                        "total_modules_failed": 0,
-                        "total_retakes": 0,
-                        "total_missing_modules": 0,
-                        "completion_percentage": 0
-                    },
+                    for plan_row in all_plans:
+                        candidate_plan = plan_row[0]
+                        if candidate_plan == plan_code:  # Skip the original plan
+                            continue
+                            
+                        # Get modules for this plan
+                        plan_modules_list = db.query(plan_modules).filter(
+                            plan_modules.c.plan_code == candidate_plan
+                        ).all()
+                        plan_module_codes = [pm.module_code for pm in plan_modules_list]
+                        
+                        if plan_module_codes:
+                            # Calculate match score
+                            matches = set(student_module_codes).intersection(set(plan_module_codes))
+                            match_score = len(matches) / len(plan_module_codes) if plan_module_codes else 0
+                            
+                            if match_score > best_match_score and match_score > 0.5:  # At least 50% match
+                                best_match = candidate_plan
+                                best_match_score = match_score
                     
-                    # Empty data structures
-                    "modules_by_year": {},
-                    "retake_analysis": {"total_retakes": 0, "retake_details": [], "all_modules_analysis": {}},
-                    "missing_modules_by_year": {"1st": [], "2nd": [], "3rd": [], "4th": [], "Other": []},
-                    "outstanding_modules": {
-                        "total_outstanding": 0,
-                        "by_year": {"1st": [], "2nd": [], "3rd": [], "4th": [], "Other": []},
-                        "by_phase": {"Foundation": [], "Intermediate": [], "Advanced": [], "Other": []}
-                    },
-                    
-                    "undefined_plan": True,
-                    "analysis_timestamp": datetime.now().isoformat()
-                }
+                    if best_match:
+                        print(f"✅ Found matching plan: {best_match} (score: {best_match_score:.2f})")
+                        plan_code = best_match
+                        plan_requirements_check = db.query(plan_modules).filter(
+                            plan_modules.c.plan_code == plan_code
+                        ).first()
+                    else:
+                        print(f"❌ No suitable plan match found for {student_number}")
+                        # Return graceful response for undefined plan codes
+                        return {
+                            "student_number": student_number,
+                            "student_name": student.name,
+                            "plan_code": student.plan_code,  # Keep original plan code
+                            "plan_description": student.plan_description,
+                            "current_year": "2024",
+                            "current_academic_level": "Unknown",
+                            
+                            # Summary statistics  
+                            "summary": {
+                                "total_required_modules": 0,
+                                "total_modules_passed": 0,
+                                "total_modules_failed": 0,
+                                "total_retakes": 0,
+                                "total_missing_modules": 0,
+                                "completion_percentage": 0
+                            },
+                            
+                            # Empty data structures
+                            "modules_by_year": {},
+                            "retake_analysis": {"total_retakes": 0, "retake_details": [], "all_modules_analysis": {}},
+                            "missing_modules_by_year": {"1st": [], "2nd": [], "3rd": [], "4th": [], "Other": []},
+                            "outstanding_modules": {
+                                "total_outstanding": 0,
+                                "by_year": {"1st": [], "2nd": [], "3rd": [], "4th": [], "Other": []},
+                                "by_phase": {"Foundation": [], "Intermediate": [], "Advanced": [], "Other": []}
+                            },
+                            
+                            "undefined_plan": True,
+                            "analysis_timestamp": datetime.now().isoformat()
+                        }
+                else:
+                    print(f"✅ Returning graceful response for undefined plan: {plan_code}")
+                    return {
+                        "student_number": student_number,
+                        "student_name": student.name,
+                        "plan_code": plan_code,
+                        "plan_description": student.plan_description,
+                        "current_year": "2024",
+                        "current_academic_level": "Unknown",
+                        
+                        # Summary statistics  
+                        "summary": {
+                            "total_required_modules": 0,
+                            "total_modules_passed": 0,
+                            "total_modules_failed": 0,
+                            "total_retakes": 0,
+                            "total_missing_modules": 0,
+                            "completion_percentage": 0
+                        },
+                        
+                        # Empty data structures
+                        "modules_by_year": {},
+                        "retake_analysis": {"total_retakes": 0, "retake_details": [], "all_modules_analysis": {}},
+                        "missing_modules_by_year": {"1st": [], "2nd": [], "3rd": [], "4th": [], "Other": []},
+                        "outstanding_modules": {
+                            "total_outstanding": 0,
+                            "by_year": {"1st": [], "2nd": [], "3rd": [], "4th": [], "Other": []},
+                            "by_phase": {"Foundation": [], "Intermediate": [], "Advanced": [], "Other": []}
+                        },
+                        
+                        "undefined_plan": True,
+                        "analysis_timestamp": datetime.now().isoformat()
+                    }
             
             # Get all student modules (including failed and retakes)
             all_student_modules = db.query(StudentModule).filter(
@@ -1480,35 +1555,81 @@ class DataLoaderService:
                 required_year = requirement['year'] or "1st"
                 required_level = year_hierarchy.get(required_year, 1)
                 
-                # Only consider modules as missing if they should have been completed by now
-                # AND they are not currently in progress AND not already passed
-                if (module_code not in passed_module_codes and 
-                    module_code not in in_progress_module_codes and 
-                    required_level <= current_level):
-                    total_missing += 1
-                    missing_module = {
-                        "module_code": module_code,
-                        "module_name": requirement.get('module_name', None),
-                        "required_year": required_year,
-                        "phase": requirement.get('phase', 'Other'),
-                        "credits": requirement.get('credits', 0),
-                        "priority": "High" if required_year == current_academic_level else "Normal",
-                        "is_overdue": required_level < current_level
-                    }
+                # Handle elective modules (OR logic)
+                if " OR " in module_code:
+                    # Parse elective options
+                    elective_options = parse_elective_modules(module_code)
                     
-                    # Map full year names to short names for categorization
-                    year_mapping = {
-                        "First Year": "1st",
-                        "Second Year": "2nd", 
-                        "Third Year": "3rd",
-                        "Fourth Year": "4th"
-                    }
-                    categorized_year = year_mapping.get(required_year, required_year)
+                    # Check if student completed any of the elective options
+                    completed_elective = check_elective_completion(db, student_number, elective_options)
                     
-                    if categorized_year in missing_by_year:
-                        missing_by_year[categorized_year].append(missing_module)
+                    if completed_elective:
+                        # Student completed one of the elective options, so this requirement is satisfied
+                        print(f"✅ Elective requirement satisfied: {module_code} → completed {completed_elective}")
+                        continue
                     else:
-                        missing_by_year["Other"].append(missing_module)
+                        # Student hasn't completed any of the elective options
+                        print(f"❌ Elective requirement not satisfied: {module_code} - no options completed")
+                        # Check if this should be considered missing (based on academic level)
+                        if required_level <= current_level:
+                            total_missing += 1
+                            missing_module = {
+                                "module_code": module_code,
+                                "module_name": requirement.get('module_name', None),
+                                "required_year": required_year,
+                                "phase": requirement.get('phase', 'Other'),
+                                "credits": requirement.get('credits', 0),
+                                "priority": "High" if required_year == current_academic_level else "Normal",
+                                "is_overdue": required_level < current_level,
+                                "is_elective": True,
+                                "elective_options": elective_options
+                            }
+                            
+                            # Map full year names to short names for categorization
+                            year_mapping = {
+                                "First Year": "1st",
+                                "Second Year": "2nd", 
+                                "Third Year": "3rd",
+                                "Fourth Year": "4th"
+                            }
+                            categorized_year = year_mapping.get(required_year, required_year)
+                            
+                            if categorized_year in missing_by_year:
+                                missing_by_year[categorized_year].append(missing_module)
+                            else:
+                                missing_by_year["Other"].append(missing_module)
+                else:
+                    # Regular module (not elective)
+                    # Only consider modules as missing if they should have been completed by now
+                    # AND they are not currently in progress AND not already passed
+                    if (module_code not in passed_module_codes and 
+                        module_code not in in_progress_module_codes and 
+                        required_level <= current_level):
+                        total_missing += 1
+                        missing_module = {
+                            "module_code": module_code,
+                            "module_name": requirement.get('module_name', None),
+                            "required_year": required_year,
+                            "phase": requirement.get('phase', 'Other'),
+                            "credits": requirement.get('credits', 0),
+                            "priority": "High" if required_year == current_academic_level else "Normal",
+                            "is_overdue": required_level < current_level,
+                            "is_elective": False
+                        }
+                        
+                        # Map full year names to short names for categorization
+                        year_mapping = {
+                            "First Year": "1st",
+                            "Second Year": "2nd", 
+                            "Third Year": "3rd",
+                            "Fourth Year": "4th"
+                        }
+                        categorized_year = year_mapping.get(required_year, required_year)
+                        
+                        if categorized_year in missing_by_year:
+                            missing_by_year[categorized_year].append(missing_module)
+                        else:
+                            missing_by_year["Other"].append(missing_module)
             
             # Calculate summary statistics
             total_required = len(formatted_requirements)
@@ -2392,35 +2513,81 @@ class ReportService:
                 required_year = requirement['year'] or "1st"
                 required_level = year_hierarchy.get(required_year, 1)
                 
-                # Only consider modules as missing if they should have been completed by now
-                # AND they are not currently in progress AND not already passed
-                if (module_code not in passed_module_codes and 
-                    module_code not in in_progress_module_codes and 
-                    required_level <= current_level):
-                    total_missing += 1
-                    missing_module = {
-                        "module_code": module_code,
-                        "module_name": requirement.get('module_name', None),
-                        "required_year": required_year,
-                        "phase": requirement.get('phase', 'Other'),
-                        "credits": requirement.get('credits', 0),
-                        "priority": "High" if required_year == current_academic_level else "Normal",
-                        "is_overdue": required_level < current_level
-                    }
+                # Handle elective modules (OR logic)
+                if " OR " in module_code:
+                    # Parse elective options
+                    elective_options = parse_elective_modules(module_code)
                     
-                    # Map full year names to short names for categorization
-                    year_mapping = {
-                        "First Year": "1st",
-                        "Second Year": "2nd", 
-                        "Third Year": "3rd",
-                        "Fourth Year": "4th"
-                    }
-                    categorized_year = year_mapping.get(required_year, required_year)
+                    # Check if student completed any of the elective options
+                    completed_elective = check_elective_completion(db, student_number, elective_options)
                     
-                    if categorized_year in missing_by_year:
-                        missing_by_year[categorized_year].append(missing_module)
+                    if completed_elective:
+                        # Student completed one of the elective options, so this requirement is satisfied
+                        print(f"✅ Elective requirement satisfied: {module_code} → completed {completed_elective}")
+                        continue
                     else:
-                        missing_by_year["Other"].append(missing_module)
+                        # Student hasn't completed any of the elective options
+                        print(f"❌ Elective requirement not satisfied: {module_code} - no options completed")
+                        # Check if this should be considered missing (based on academic level)
+                        if required_level <= current_level:
+                            total_missing += 1
+                            missing_module = {
+                                "module_code": module_code,
+                                "module_name": requirement.get('module_name', None),
+                                "required_year": required_year,
+                                "phase": requirement.get('phase', 'Other'),
+                                "credits": requirement.get('credits', 0),
+                                "priority": "High" if required_year == current_academic_level else "Normal",
+                                "is_overdue": required_level < current_level,
+                                "is_elective": True,
+                                "elective_options": elective_options
+                            }
+                            
+                            # Map full year names to short names for categorization
+                            year_mapping = {
+                                "First Year": "1st",
+                                "Second Year": "2nd", 
+                                "Third Year": "3rd",
+                                "Fourth Year": "4th"
+                            }
+                            categorized_year = year_mapping.get(required_year, required_year)
+                            
+                            if categorized_year in missing_by_year:
+                                missing_by_year[categorized_year].append(missing_module)
+                            else:
+                                missing_by_year["Other"].append(missing_module)
+                else:
+                    # Regular module (not elective)
+                    # Only consider modules as missing if they should have been completed by now
+                    # AND they are not currently in progress AND not already passed
+                    if (module_code not in passed_module_codes and 
+                        module_code not in in_progress_module_codes and 
+                        required_level <= current_level):
+                        total_missing += 1
+                        missing_module = {
+                            "module_code": module_code,
+                            "module_name": requirement.get('module_name', None),
+                            "required_year": required_year,
+                            "phase": requirement.get('phase', 'Other'),
+                            "credits": requirement.get('credits', 0),
+                            "priority": "High" if required_year == current_academic_level else "Normal",
+                            "is_overdue": required_level < current_level,
+                            "is_elective": False
+                        }
+                        
+                        # Map full year names to short names for categorization
+                        year_mapping = {
+                            "First Year": "1st",
+                            "Second Year": "2nd", 
+                            "Third Year": "3rd",
+                            "Fourth Year": "4th"
+                        }
+                        categorized_year = year_mapping.get(required_year, required_year)
+                        
+                        if categorized_year in missing_by_year:
+                            missing_by_year[categorized_year].append(missing_module)
+                        else:
+                            missing_by_year["Other"].append(missing_module)
             
             # Calculate summary statistics
             total_required = len(formatted_requirements)

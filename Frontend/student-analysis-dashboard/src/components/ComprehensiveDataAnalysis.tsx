@@ -1568,7 +1568,7 @@ const ComprehensiveDataAnalysis: React.FC<ComprehensiveDataAnalysisProps> = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-60 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+              className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
               onClick={() => setStudentLookup(prev => ({ ...prev, isOpen: false }))}
             >
               <motion.div
@@ -1706,15 +1706,19 @@ const ComprehensiveDataAnalysis: React.FC<ComprehensiveDataAnalysisProps> = ({
                             </div>
                             
                             {/* Module Lists */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                               {modules.passed?.length > 0 && (
                                 <div>
-                                  <h5 className="text-sm font-medium text-emerald-700 mb-2">Passed Modules</h5>
-                                  <div className="space-y-1">
+                                  <h5 className="text-sm font-medium text-emerald-700 mb-3">Passed Modules</h5>
+                                  <div className="space-y-2">
                                     {modules.passed.map((module: any, idx: number) => (
-                                      <div key={idx} className="text-xs bg-emerald-50 p-2 rounded border-l-2 border-emerald-400">
-                                        <div className="font-medium">{module.module_code}</div>
-                                        <div className="text-slate-600">Mark: {module.final_mark || 'N/A'}</div>
+                                      <div key={idx} className="text-xs bg-emerald-50 p-3 rounded-lg border-l-4 border-emerald-400 shadow-sm">
+                                        <div className="font-bold text-emerald-900 text-sm">{module.module_code}</div>
+                                        <div className="text-emerald-800 font-medium text-xs mt-1 leading-tight">{module.module_name}</div>
+                                        <div className="text-slate-700 font-semibold mt-2">Mark: {module.final_mark || 'N/A'}%</div>
+                                        {module.credits_earned && (
+                                          <div className="text-slate-500 text-xs mt-1">Credits: {module.credits_earned}</div>
+                                        )}
                                       </div>
                                     ))}
                                   </div>
@@ -1723,12 +1727,16 @@ const ComprehensiveDataAnalysis: React.FC<ComprehensiveDataAnalysisProps> = ({
 
                               {modules.failed?.length > 0 && (
                                 <div>
-                                  <h5 className="text-sm font-medium text-red-700 mb-2">Failed Modules</h5>
-                                  <div className="space-y-1">
+                                  <h5 className="text-sm font-medium text-red-700 mb-3">Failed Modules</h5>
+                                  <div className="space-y-2">
                                     {modules.failed.map((module: any, idx: number) => (
-                                      <div key={idx} className="text-xs bg-red-50 p-2 rounded border-l-2 border-red-400">
-                                        <div className="font-medium">{module.module_code}</div>
-                                        <div className="text-slate-600">Mark: {module.final_mark || 'N/A'}</div>
+                                      <div key={idx} className="text-xs bg-red-50 p-3 rounded-lg border-l-4 border-red-400 shadow-sm">
+                                        <div className="font-bold text-red-900 text-sm">{module.module_code}</div>
+                                        <div className="text-red-800 font-medium text-xs mt-1 leading-tight">{module.module_name}</div>
+                                        <div className="text-slate-700 font-semibold mt-2">Mark: {module.final_mark || 'N/A'}%</div>
+                                        {module.credits_earned && (
+                                          <div className="text-slate-500 text-xs mt-1">Credits: {module.credits_earned}</div>
+                                        )}
                                       </div>
                                     ))}
                                   </div>
@@ -1737,12 +1745,16 @@ const ComprehensiveDataAnalysis: React.FC<ComprehensiveDataAnalysisProps> = ({
 
                               {modules.in_progress?.length > 0 && (
                                 <div>
-                                  <h5 className="text-sm font-medium text-amber-700 mb-2">In Progress</h5>
-                                  <div className="space-y-1">
+                                  <h5 className="text-sm font-medium text-amber-700 mb-3">In Progress</h5>
+                                  <div className="space-y-2">
                                     {modules.in_progress.map((module: any, idx: number) => (
-                                      <div key={idx} className="text-xs bg-amber-50 p-2 rounded border-l-2 border-amber-400">
-                                        <div className="font-medium">{module.module_code}</div>
-                                        <div className="text-slate-600">Status: In Progress</div>
+                                      <div key={idx} className="text-xs bg-amber-50 p-3 rounded-lg border-l-4 border-amber-400 shadow-sm">
+                                        <div className="font-bold text-amber-900 text-sm">{module.module_code}</div>
+                                        <div className="text-amber-800 font-medium text-xs mt-1 leading-tight">{module.module_name}</div>
+                                        <div className="text-slate-700 font-semibold mt-2">Status: In Progress</div>
+                                        {module.credits_earned && (
+                                          <div className="text-slate-500 text-xs mt-1">Credits: {module.credits_earned}</div>
+                                        )}
                                       </div>
                                     ))}
                                   </div>
