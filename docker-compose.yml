@@ -46,6 +46,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
+      - ./Backend:/app
       - ./Backend/uploads:/app/uploads
       - ./Backend/temp:/app/temp
     depends_on:
