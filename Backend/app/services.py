@@ -2323,8 +2323,13 @@ class ReportService:
             
             # If no 100% full load found, fall back to completion-based logic
             if current_academic_level == "1st":
-                for year in ["1st", "2nd", "3rd", "4th"]:
-                    required_for_year = set(requirements_by_year[year])
+                # Determine available years based on plan type (extended programs support 5th/6th years)
+                available_years = ["1st", "2nd", "3rd", "4th"]
+                if plan_code and "E" in plan_code.upper():
+                    available_years.extend(["5th", "6th"])
+                
+                for year in available_years:
+                    required_for_year = set(requirements_by_year.get(year, set()))
                     if not required_for_year:
                         continue
                     
@@ -2335,21 +2340,21 @@ class ReportService:
                     if completion_rate >= 0.8:
                         # Check prerequisites
                         can_be_at_level = True
-                        for prev_year in ["1st", "2nd", "3rd"]:
+                        for prev_year in ["1st", "2nd", "3rd", "4th"]:
                             if prev_year == year:
                                 break
-                            prev_required = set(requirements_by_year[prev_year])
+                            prev_required = set(requirements_by_year.get(prev_year, set()))
                             if prev_required:
                                 prev_completed = passed_modules.intersection(prev_required)
                                 prev_rate = len(prev_completed) / len(prev_required)
                                 if prev_rate < 0.7:
                                     can_be_at_level = False
                                     break
-                            
-                            if can_be_at_level:
-                                current_academic_level = year
-                            else:
-                                break  # Can't advance further due to incomplete prerequisites
+                        
+                        if can_be_at_level:
+                            current_academic_level = year
+                        else:
+                            break  # Can't advance further due to incomplete prerequisites
             
             # Analyze modules by year and track retakes
             modules_by_year = {}
@@ -2959,7 +2964,13 @@ class ReportService:
                                 
                                 if len(elective_options) > 1:
                                     # This is an elective requirement (OR module)
-                                    completed_option = check_elective_completion(db, student_num, elective_options)
+                                    # Use pre-loaded student modules instead of database query
+                                    completed_option = None
+                                    for option in elective_options:
+                                        if option in passed_modules:
+                                            completed_option = option
+                                            break
+                                    
                                     if not completed_option:
                                         # None of the elective options are completed
                                         missing_modules.append({
@@ -3048,7 +3059,7 @@ class ReportService:
                     # Calculate completion percentage - CORRECT: 
                     # Numerator: ALL modules student has passed (across all years)
                     # Denominator: Modules required up to their current academic level
-                    level_hierarchy = {"1st": 1, "2nd": 2, "3rd": 3, "4th": 4}
+                    level_hierarchy = {"1st": 1, "2nd": 2, "3rd": 3, "4th": 4, "5th": 5, "6th": 6}
                     current_level_num = level_hierarchy[academic_level]
                     
                     # Only count required modules up to current academic level
@@ -3184,8 +3195,9 @@ class ReportService:
                     print(f"🚨 CRITICAL ERROR processing student {student_num if 'student_num' in locals() else 'unknown'}: {str(e)}")
                     print(f"   Error type: {type(e).__name__}")
                     import traceback
-                    traceback.print_exc()
-                    results["errors"].append(f"Student {student.student_number if hasattr(student, 'student_number') else 'unknown'}: {str(e)}")
+                    tb_str = traceback.format_exc()
+                    print(tb_str)
+                    results["errors"].append(f"Student {student.student_number if hasattr(student, 'student_number') else 'unknown'}: {str(e)}\nTraceback: {tb_str}")
             
             # ============================================================================
             # STEP 5: BULK INSERT MISSING MODULES (ULTRA FAST)
@@ -3434,7 +3446,7 @@ class ReportService:
                     if coverage_rate >= 1.0:  # 100% coverage
                         # Check prerequisites
                         can_be_at_level = True
-                        level_hierarchy = {"1st": 1, "2nd": 2, "3rd": 3, "4th": 4}
+                        level_hierarchy = {"1st": 1, "2nd": 2, "3rd": 3, "4th": 4, "5th": 5, "6th": 6}
                         current_level_num = level_hierarchy[level]
                         
                         for prev_level in ["1st", "2nd", "3rd"]:
@@ -3455,7 +3467,7 @@ class ReportService:
                             break
                 
                 # Calculate missing modules
-                level_hierarchy = {"1st": 1, "2nd": 2, "3rd": 3, "4th": 4}
+                level_hierarchy = {"1st": 1, "2nd": 2, "3rd": 3, "4th": 4, "5th": 5, "6th": 6}
                 current_level_num = level_hierarchy[student_academic_level]
                 
                 missing_modules_count = 0
@@ -3542,7 +3554,7 @@ class ReportService:
                     # Calculate completion percentage - CORRECT: 
                     # Numerator: ALL modules student has passed (across all years)
                     # Denominator: Modules required up to their current academic level
-                    level_hierarchy = {"1st": 1, "2nd": 2, "3rd": 3, "4th": 4}
+                    level_hierarchy = {"1st": 1, "2nd": 2, "3rd": 3, "4th": 4, "5th": 5, "6th": 6}
                     current_level_num = level_hierarchy[student_academic_level]
                     
                     # Only count required modules up to current academic level

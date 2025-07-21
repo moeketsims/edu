@@ -1712,7 +1712,7 @@ const ComprehensiveDataAnalysis: React.FC<ComprehensiveDataAnalysisProps> = ({
                                   <h5 className="text-sm font-medium text-emerald-700 mb-3">Passed Modules</h5>
                                   <div className="space-y-2">
                                     {modules.passed.map((module: any, idx: number) => (
-                                      <div key={idx} className="text-xs bg-emerald-50 p-3 rounded-lg border-l-4 border-emerald-400 shadow-sm">
+                                      <div key={`${module.module_code}-${module.final_mark}-${idx}`} className="text-xs bg-emerald-50 p-3 rounded-lg border-l-4 border-emerald-400 shadow-sm">
                                         <div className="font-bold text-emerald-900 text-sm">{module.module_code}</div>
                                         <div className="text-emerald-800 font-medium text-xs mt-1 leading-tight">{module.module_name}</div>
                                         <div className="text-slate-700 font-semibold mt-2">Mark: {module.final_mark || 'N/A'}%</div>
@@ -1730,7 +1730,7 @@ const ComprehensiveDataAnalysis: React.FC<ComprehensiveDataAnalysisProps> = ({
                                   <h5 className="text-sm font-medium text-red-700 mb-3">Failed Modules</h5>
                                   <div className="space-y-2">
                                     {modules.failed.map((module: any, idx: number) => (
-                                      <div key={idx} className="text-xs bg-red-50 p-3 rounded-lg border-l-4 border-red-400 shadow-sm">
+                                      <div key={`${module.module_code}-${module.final_mark}-${idx}`} className="text-xs bg-red-50 p-3 rounded-lg border-l-4 border-red-400 shadow-sm">
                                         <div className="font-bold text-red-900 text-sm">{module.module_code}</div>
                                         <div className="text-red-800 font-medium text-xs mt-1 leading-tight">{module.module_name}</div>
                                         <div className="text-slate-700 font-semibold mt-2">Mark: {module.final_mark || 'N/A'}%</div>
@@ -1748,7 +1748,7 @@ const ComprehensiveDataAnalysis: React.FC<ComprehensiveDataAnalysisProps> = ({
                                   <h5 className="text-sm font-medium text-amber-700 mb-3">In Progress</h5>
                                   <div className="space-y-2">
                                     {modules.in_progress.map((module: any, idx: number) => (
-                                      <div key={idx} className="text-xs bg-amber-50 p-3 rounded-lg border-l-4 border-amber-400 shadow-sm">
+                                      <div key={`${module.module_code}-${module.credits_earned}-${idx}`} className="text-xs bg-amber-50 p-3 rounded-lg border-l-4 border-amber-400 shadow-sm">
                                         <div className="font-bold text-amber-900 text-sm">{module.module_code}</div>
                                         <div className="text-amber-800 font-medium text-xs mt-1 leading-tight">{module.module_name}</div>
                                         <div className="text-slate-700 font-semibold mt-2">Status: In Progress</div>
@@ -1778,7 +1778,7 @@ const ComprehensiveDataAnalysis: React.FC<ComprehensiveDataAnalysisProps> = ({
                               <h4 className="font-semibold text-red-900 mb-3">{year} Year Modules</h4>
                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                                 {modules.map((module: any, idx: number) => (
-                                  <div key={idx} className="bg-red-50 p-3 rounded border border-red-200">
+                                  <div key={`${module.module_code}-${module.credits}-${idx}`} className="bg-red-50 p-3 rounded border border-red-200">
                                     <div className="font-medium text-red-900">{module.module_code}</div>
                                     <div className="text-sm text-red-700">{module.module_name}</div>
                                     <div className="text-xs text-red-600 mt-1">
