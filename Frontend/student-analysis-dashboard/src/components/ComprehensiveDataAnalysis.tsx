@@ -128,6 +128,15 @@ const ComprehensiveDataAnalysis: React.FC<ComprehensiveDataAnalysisProps> = ({
     modules: []
   });
 
+  // Student lookup state
+  const [studentLookup, setStudentLookup] = useState({
+    studentNumber: '',
+    loading: false,
+    data: null as any,
+    error: null as string | null,
+    isOpen: false
+  });
+
   // Close popup with ESC key
   useEffect(() => {
     const handleEscKey = (event: KeyboardEvent) => {
@@ -522,6 +531,49 @@ const ComprehensiveDataAnalysis: React.FC<ComprehensiveDataAnalysisProps> = ({
     });
   };
 
+  // Student lookup functionality
+  const handleStudentLookup = async (studentNumber: string) => {
+    if (!studentNumber.trim()) {
+      setStudentLookup(prev => ({ ...prev, error: 'Please enter a student number' }));
+      return;
+    }
+
+    setStudentLookup(prev => ({ 
+      ...prev, 
+      loading: true, 
+      error: null, 
+      data: null 
+    }));
+
+    try {
+      const response = await fetch(`/api/comprehensive-student-analysis/${studentNumber.trim()}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch student data: ${response.status}`);
+      }
+
+      const studentData = await response.json();
+      
+      if (studentData.error) {
+        throw new Error(studentData.error);
+      }
+
+      setStudentLookup(prev => ({
+        ...prev,
+        loading: false,
+        data: studentData,
+        isOpen: true
+      }));
+
+    } catch (error: any) {
+      setStudentLookup(prev => ({
+        ...prev,
+        loading: false,
+        error: error.message || 'Failed to fetch student data'
+      }));
+    }
+  };
+
   // Don't render if not open
   if (!isOpen) return null;
 
@@ -541,18 +593,62 @@ const ComprehensiveDataAnalysis: React.FC<ComprehensiveDataAnalysisProps> = ({
         >
           {/* Enterprise Header */}
           <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 px-8 py-6 flex items-center justify-between text-white">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl shadow-lg">
-                <BarChart3 className="w-8 h-8 text-white" />
-            </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
-                  Enterprise Analytics Dashboard
-                </h1>
-                <p className="text-slate-400 text-sm font-medium">
-                  Comprehensive Student Performance Intelligence
-                </p>
-          </div>
+            <div className="flex items-center space-x-6">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl shadow-lg">
+                  <BarChart3 className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
+                    Enterprise Analytics Dashboard
+                  </h1>
+                  <p className="text-slate-400 text-sm font-medium">
+                    Comprehensive Student Performance Intelligence
+                  </p>
+                </div>
+              </div>
+
+              {/* Student Lookup Section */}
+              <div className="flex items-center space-x-3 border-l border-slate-600 pl-6">
+                <div className="flex items-center space-x-2">
+                  <Search className="w-5 h-5 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Enter student number..."
+                    value={studentLookup.studentNumber}
+                    onChange={(e) => setStudentLookup(prev => ({ 
+                      ...prev, 
+                      studentNumber: e.target.value,
+                      error: null 
+                    }))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleStudentLookup(studentLookup.studentNumber);
+                      }
+                    }}
+                    className="bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-all duration-200 w-48"
+                  />
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleStudentLookup(studentLookup.studentNumber)}
+                    disabled={studentLookup.loading}
+                    className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg font-medium hover:from-emerald-600 hover:to-teal-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                  >
+                    {studentLookup.loading ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                    <span>Lookup</span>
+                  </motion.button>
+                </div>
+                {studentLookup.error && (
+                  <div className="text-red-400 text-sm">
+                    {studentLookup.error}
+                  </div>
+                )}
+              </div>
             </div>
             
             <div className="flex items-center space-x-3">
@@ -1464,6 +1560,232 @@ const ComprehensiveDataAnalysis: React.FC<ComprehensiveDataAnalysisProps> = ({
               </motion.div>
             </motion.div>
         )}
+
+        {/* Student Lookup Modal */}
+        <AnimatePresence>
+          {studentLookup.isOpen && studentLookup.data && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-60 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+              onClick={() => setStudentLookup(prev => ({ ...prev, isOpen: false }))}
+            >
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden"
+              >
+                {/* Modal Header */}
+                <div className="bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-4 flex items-center justify-between text-white">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-emerald-500 rounded-lg">
+                      <GraduationCap className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold">Student Academic Record</h2>
+                      <p className="text-slate-300 text-sm">
+                        {studentLookup.data.student_name} ({studentLookup.data.student_number})
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setStudentLookup(prev => ({ ...prev, isOpen: false }))}
+                    className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Modal Content */}
+                <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+                  {/* Student Overview */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Users className="w-5 h-5 text-blue-600" />
+                        <span className="font-semibold text-blue-900">Academic Level</span>
+                      </div>
+                      <p className="text-2xl font-bold text-blue-700">
+                        {studentLookup.data.current_academic_level || 'Unknown'}
+                      </p>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-4 rounded-xl border border-emerald-200">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Target className="w-5 h-5 text-emerald-600" />
+                        <span className="font-semibold text-emerald-900">Completion</span>
+                      </div>
+                      <p className="text-2xl font-bold text-emerald-700">
+                        {studentLookup.data.summary?.completion_percentage?.toFixed(1) || 0}%
+                      </p>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-4 rounded-xl border border-amber-200">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <AlertTriangle className="w-5 h-5 text-amber-600" />
+                        <span className="font-semibold text-amber-900">Missing Modules</span>
+                      </div>
+                      <p className="text-2xl font-bold text-amber-700">
+                        {studentLookup.data.summary?.total_missing_modules || 0}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Plan Information */}
+                  <div className="bg-slate-50 p-6 rounded-xl mb-8">
+                    <h3 className="text-lg font-bold text-slate-900 mb-4">Programme Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <span className="text-sm font-medium text-slate-600">Plan Code:</span>
+                        <p className="text-slate-900 font-semibold">{studentLookup.data.plan_code}</p>
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-slate-600">Description:</span>
+                        <p className="text-slate-900">{studentLookup.data.plan_description}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Academic Summary */}
+                  <div className="bg-slate-50 p-6 rounded-xl mb-8">
+                    <h3 className="text-lg font-bold text-slate-900 mb-4">Academic Summary</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-slate-900">
+                          {studentLookup.data.summary?.total_modules_passed || 0}
+                        </p>
+                        <p className="text-sm text-slate-600">Modules Passed</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-slate-900">
+                          {studentLookup.data.summary?.total_modules_failed || 0}
+                        </p>
+                        <p className="text-sm text-slate-600">Modules Failed</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-slate-900">
+                          {studentLookup.data.summary?.total_retakes || 0}
+                        </p>
+                        <p className="text-sm text-slate-600">Retakes</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-slate-900">
+                          {studentLookup.data.summary?.total_required_modules || 0}
+                        </p>
+                        <p className="text-sm text-slate-600">Required Modules</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Modules by Year */}
+                  {studentLookup.data.modules_by_year && Object.keys(studentLookup.data.modules_by_year).length > 0 && (
+                    <div className="bg-slate-50 p-6 rounded-xl mb-8">
+                      <h3 className="text-lg font-bold text-slate-900 mb-4">Academic Progress by Year</h3>
+                      <div className="space-y-4">
+                        {Object.entries(studentLookup.data.modules_by_year).map(([year, modules]: [string, any]) => (
+                          <div key={year} className="bg-white p-4 rounded-lg border">
+                            <div className="flex items-center justify-between mb-3">
+                              <h4 className="font-semibold text-slate-900">Year {year}</h4>
+                              <div className="flex items-center space-x-4 text-sm">
+                                <span className="text-emerald-600">
+                                  <CheckCircle2 className="w-4 h-4 inline mr-1" />
+                                  {modules.passed?.length || 0} Passed
+                                </span>
+                                <span className="text-red-600">
+                                  <X className="w-4 h-4 inline mr-1" />
+                                  {modules.failed?.length || 0} Failed
+                                </span>
+                                <span className="text-amber-600">
+                                  <Clock className="w-4 h-4 inline mr-1" />
+                                  {modules.in_progress?.length || 0} In Progress
+                                </span>
+                              </div>
+                            </div>
+                            
+                            {/* Module Lists */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              {modules.passed?.length > 0 && (
+                                <div>
+                                  <h5 className="text-sm font-medium text-emerald-700 mb-2">Passed Modules</h5>
+                                  <div className="space-y-1">
+                                    {modules.passed.map((module: any, idx: number) => (
+                                      <div key={idx} className="text-xs bg-emerald-50 p-2 rounded border-l-2 border-emerald-400">
+                                        <div className="font-medium">{module.module_code}</div>
+                                        <div className="text-slate-600">Mark: {module.final_mark || 'N/A'}</div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {modules.failed?.length > 0 && (
+                                <div>
+                                  <h5 className="text-sm font-medium text-red-700 mb-2">Failed Modules</h5>
+                                  <div className="space-y-1">
+                                    {modules.failed.map((module: any, idx: number) => (
+                                      <div key={idx} className="text-xs bg-red-50 p-2 rounded border-l-2 border-red-400">
+                                        <div className="font-medium">{module.module_code}</div>
+                                        <div className="text-slate-600">Mark: {module.final_mark || 'N/A'}</div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {modules.in_progress?.length > 0 && (
+                                <div>
+                                  <h5 className="text-sm font-medium text-amber-700 mb-2">In Progress</h5>
+                                  <div className="space-y-1">
+                                    {modules.in_progress.map((module: any, idx: number) => (
+                                      <div key={idx} className="text-xs bg-amber-50 p-2 rounded border-l-2 border-amber-400">
+                                        <div className="font-medium">{module.module_code}</div>
+                                        <div className="text-slate-600">Status: In Progress</div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Missing Modules */}
+                  {studentLookup.data.missing_modules_by_year && (
+                    <div className="bg-red-50 p-6 rounded-xl">
+                      <h3 className="text-lg font-bold text-red-900 mb-4">Outstanding Modules</h3>
+                      <div className="space-y-4">
+                        {Object.entries(studentLookup.data.missing_modules_by_year).map(([year, modules]: [string, any]) => (
+                          modules?.length > 0 && (
+                            <div key={year} className="bg-white p-4 rounded-lg border border-red-200">
+                              <h4 className="font-semibold text-red-900 mb-3">{year} Year Modules</h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {modules.map((module: any, idx: number) => (
+                                  <div key={idx} className="bg-red-50 p-3 rounded border border-red-200">
+                                    <div className="font-medium text-red-900">{module.module_code}</div>
+                                    <div className="text-sm text-red-700">{module.module_name}</div>
+                                    <div className="text-xs text-red-600 mt-1">
+                                      {module.credits} credits • {module.priority} priority
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </motion.div>
     </AnimatePresence>
