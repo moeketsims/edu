@@ -285,21 +285,10 @@ class DataLoaderService:
                 plan_modules.c.plan_code == plan_code
             ).all()
             
-            # If no plan requirements found, try to get from modules table
+            # If no plan requirements found, skip missing modules analysis
             if not plan_requirements:
-                # Fallback: get all modules and assume they might be required
-                all_modules = db.query(Module).all()
+                print(f"⚠️ No plan requirements found for {plan_code}, skipping missing modules analysis")
                 plan_requirements = []
-                for module in all_modules:
-                    # Create a mock plan requirement
-                    plan_requirements.append({
-                        'module_code': module.code,
-                        'module_name': module.name,
-                        'year': '1st',  # Default to 1st year
-                        'phase': module.phase or 'Other',
-                        'credits': module.credits,
-                        'is_required': True
-                    })
             
             # Convert plan_requirements to a consistent format
             formatted_requirements = []
@@ -1194,7 +1183,7 @@ class DataLoaderService:
             # Get all student modules (including failed and retakes)
             all_student_modules = db.query(StudentModule).filter(
                 StudentModule.student_number == student_number
-            ).order_by(StudentModule.year_taken, StudentModule.module_code).all()
+            ).all()
             
             # Calculate current year (latest year student was registered)
             years_with_modules = [module.year_taken for module in all_student_modules if module.year_taken and module.year_taken.isdigit()]
@@ -2029,6 +2018,7 @@ class ReportService:
         - Missing modules per year registered (only for years up to current academic level)
         - Details of outstanding modules
         """
+
         try:
             # Get student information
             student = db.query(Student).filter(Student.student_number == student_number).first()
