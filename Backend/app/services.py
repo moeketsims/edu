@@ -1149,6 +1149,48 @@ class DataLoaderService:
             if not plan_code:
                 return {"error": "Student has no plan code", "student_number": student_number}
             
+            # Check if plan has requirements defined first
+            plan_requirements_check = db.query(plan_modules).filter(
+                plan_modules.c.plan_code == plan_code
+            ).first()
+            
+            print(f"🔍 DEBUG: Plan code {plan_code} requirements check result: {plan_requirements_check}")
+            
+            if not plan_requirements_check:
+                # Return graceful response for undefined plan codes
+                print(f"✅ Returning graceful response for undefined plan: {plan_code}")
+                return {
+                    "student_number": student_number,
+                    "student_name": student.name,
+                    "plan_code": plan_code,
+                    "plan_description": student.plan_description,
+                    "current_year": "2024",
+                    "current_academic_level": "Unknown",
+                    
+                    # Summary statistics  
+                    "summary": {
+                        "total_required_modules": 0,
+                        "total_modules_passed": 0,
+                        "total_modules_failed": 0,
+                        "total_retakes": 0,
+                        "total_missing_modules": 0,
+                        "completion_percentage": 0
+                    },
+                    
+                    # Empty data structures
+                    "modules_by_year": {},
+                    "retake_analysis": {"total_retakes": 0, "retake_details": [], "all_modules_analysis": {}},
+                    "missing_modules_by_year": {"1st": [], "2nd": [], "3rd": [], "4th": [], "Other": []},
+                    "outstanding_modules": {
+                        "total_outstanding": 0,
+                        "by_year": {"1st": [], "2nd": [], "3rd": [], "4th": [], "Other": []},
+                        "by_phase": {"Foundation": [], "Intermediate": [], "Advanced": [], "Other": []}
+                    },
+                    
+                    "undefined_plan": True,
+                    "analysis_timestamp": datetime.now().isoformat()
+                }
+            
             # Get all student modules (including failed and retakes)
             all_student_modules = db.query(StudentModule).filter(
                 StudentModule.student_number == student_number
@@ -2007,8 +2049,11 @@ class ReportService:
                 plan_modules.c.plan_code == plan_code
             ).first()
             
+            print(f"🔍 DEBUG: Plan code {plan_code} requirements check result: {plan_requirements_check}")
+            
             if not plan_requirements_check:
                 # Return graceful response for undefined plan codes
+                print(f"✅ Returning graceful response for undefined plan: {plan_code}")
                 all_student_modules = db.query(StudentModule).filter(
                     StudentModule.student_number == student_number
                 ).all()
