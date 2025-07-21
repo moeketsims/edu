@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Styling Test</title>
+    <style>
+        /* Clean CSS without any Tailwind dependencies */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+                sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background-color: #f9fafb;
+        }
+
+        /* Basic utility classes for the dashboard */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background-color: #282c34;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .button {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+
+        .button:hover {
+            background-color: #2563eb;
+        }
+
+        .grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        .success {
+            border-left: 4px solid #10b981;
+        }
+
+        .error {
+            border-left: 4px solid #ef4444;
+        }
+
+        .info {
+            border-left: 4px solid #3b82f6;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .student-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .student-card:hover {
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .filter-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #3b82f6;
+        }
+
+        .stat-label {
+            color: #6b7280;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎓 Student Academic Progress Dashboard</h1>
+        <p>CSS Styling Test - All styles working!</p>
+    </div>
+
+    <div class="container">
+        <!-- Filter Panel -->
+        <div class="filter-panel">
+            <h2>🔍 Filter Students</h2>
+            <div class="grid grid-2">
+                <div>
+                    <label>Academic Level:</label>
+                    <select>
+                        <option value="">All Levels</option>
+                        <option value="1">Level 1</option>
+                        <option value="2">Level 2</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label>Plan Code:</label>
+                    <select>
+                        <option value="">All Plans</option>
+                        <option value="CS">Computer Science</option>
+                        <option value="ENG">Engineering</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button class="button">Apply Filters</button>
+        </div>
+
+        <!-- Success Card -->
+        <div class="card success">
+            <h3>✅ Success!</h3>
+            <p>CSS styling is working perfectly!</p>
+        </div>
+
+        <!-- Error Card -->
+        <div class="card error">
+            <h3>❌ Error Example</h3>
+            <p>This shows how error styling looks.</p>
+        </div>
+
+        <!-- Info Card -->
+        <div class="card info">
+            <h3>ℹ️ Information</h3>
+            <p>This shows how info styling looks.</p>
+        </div>
+
+        <!-- Student Cards -->
+        <div class="grid grid-2">
+            <div class="student-card">
+                <h3>John Doe</h3>
+                <p><strong>Student Number:</strong> 123456</p>
+                <p><strong>Plan Code:</strong> CS101</p>
+                <p><strong>Academic Level:</strong> 2</p>
+                <p><strong>Completion:</strong> 85%</p>
+                <p><strong>Missing Modules:</strong> 2</p>
+            </div>
+            
+            <div class="student-card">
+                <h3>Jane Smith</h3>
+                <p><strong>Student Number:</strong> 789012</p>
+                <p><strong>Plan Code:</strong> ENG202</p>
+                <p><strong>Academic Level:</strong> 3</p>
+                <p><strong>Completion:</strong> 92%</p>
+                <p><strong>Missing Modules:</strong> 1</p>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">150</div>
+                <div class="stat-label">Students Loaded</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">25</div>
+                <div class="stat-label">Plan Codes Available</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">4</div>
+                <div class="stat-label">Academic Levels</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add some interactivity
+        document.querySelectorAll('.button').forEach(button => {
+            button.addEventListener('click', () => {
+                alert('Button clicked! CSS styling is working perfectly!');
+            });
+        });
+
+        document.querySelectorAll('.student-card').forEach(card => {
+            card.addEventListener('click', () => {
+                card.style.transform = 'scale(1.02)';
+                setTimeout(() => {
+                    card.style.transform = 'scale(1)';
+                }, 200);
+            });
+        });
+    </script>
+</body>
+</html> 

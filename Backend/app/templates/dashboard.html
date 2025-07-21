@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Student Module Checker{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="mb-0">
+                <i class="fas fa-dashboard me-2 text-primary"></i>
+                Dashboard
+            </h1>
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="bulkCheckMissingModules()">
+                    <i class="fas fa-sync-alt me-1"></i>
+                    Bulk Check Missing Modules
+                </button>
+                <button class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="fas fa-download me-1"></i>Export Reports
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="/api/missing-modules-report?format=csv">
+                        <i class="fas fa-file-csv me-1"></i>Download CSV
+                    </a></li>
+                    <li><a class="dropdown-item" href="/api/missing-modules-report?format=excel">
+                        <i class="fas fa-file-excel me-1"></i>Download Excel
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-5">
+    <div class="col-xl-3 col-md-6">
+        <div class="card bg-primary text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="card-title h5 mb-0">Total Students</div>
+                        <div class="display-6 fw-bold">{{ stats.total_students }}</div>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-3x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-primary border-primary">
+                <a href="/students" class="text-white text-decoration-none">
+                    <i class="fas fa-arrow-right me-1"></i>View All Students
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="card-title h5 mb-0">Total Modules</div>
+                        <div class="display-6 fw-bold">{{ stats.total_modules }}</div>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-book fa-3x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-success border-success">
+                <a href="/modules" class="text-white text-decoration-none">
+                    <i class="fas fa-arrow-right me-1"></i>View All Modules
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card bg-info text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="card-title h5 mb-0">Plan Codes</div>
+                        <div class="display-6 fw-bold">{{ stats.total_plan_codes }}</div>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-graduation-cap fa-3x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-info border-info">
+                <a href="/api/plancodes" class="text-white text-decoration-none">
+                    <i class="fas fa-arrow-right me-1"></i>View Plan Codes
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card bg-warning text-dark h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="card-title h5 mb-0">Students with Missing Modules</div>
+                        <div class="display-6 fw-bold">{{ stats.students_with_missing_modules }}</div>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-exclamation-triangle fa-3x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-warning border-warning">
+                <a href="/reports" class="text-dark text-decoration-none">
+                    <i class="fas fa-arrow-right me-1"></i>View Reports
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-4 mb-5">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-search me-2"></i>Quick Student Search
+                </h5>
+            </div>
+            <div class="card-body">
+                <form onsubmit="searchStudent(event)">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="studentSearchInput" 
+                               placeholder="Enter student number..." required>
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </form>
+                <div id="studentSearchResult" class="d-none">
+                    <!-- Search results will be displayed here -->
+                </div>
+                <div class="text-muted">
+                    <small>Search for a student to view their missing modules instantly</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-tasks me-2"></i>System Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary btn-lg" onclick="bulkCheckMissingModules()">
+                        <i class="fas fa-sync-alt me-2"></i>
+                        Run Missing Module Check
+                    </button>
+                    <button class="btn btn-outline-success btn-lg" data-bs-toggle="modal" data-bs-target="#uploadStudentDataModal">
+                        <i class="fas fa-upload me-2"></i>
+                        Upload Student Data
+                    </button>
+                    <button class="btn btn-outline-info btn-lg" data-bs-toggle="modal" data-bs-target="#uploadModulesModal">
+                        <i class="fas fa-upload me-2"></i>
+                        Upload Module Allocation
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity / System Status -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>System Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold">Database Status</h6>
+                        <div class="text-success mb-3">
+                            <i class="fas fa-check-circle me-1"></i>
+                            Connected and operational
+                        </div>
+                        
+                        <h6 class="fw-bold">Data Overview</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-dot-circle me-2 text-primary"></i>{{ stats.total_students }} students registered</li>
+                            <li><i class="fas fa-dot-circle me-2 text-success"></i>{{ stats.total_modules }} modules available</li>
+                            <li><i class="fas fa-dot-circle me-2 text-info"></i>{{ stats.total_plan_codes }} plan codes configured</li>
+                            {% if stats.students_with_missing_modules > 0 %}
+                            <li><i class="fas fa-dot-circle me-2 text-warning"></i>{{ stats.students_with_missing_modules }} students need attention</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="fw-bold">Quick Links</h6>
+                        <div class="list-group list-group-flush">
+                            <a href="/api/docs" class="list-group-item list-group-item-action" target="_blank">
+                                <i class="fas fa-code me-2"></i>API Documentation
+                            </a>
+                            <a href="/health" class="list-group-item list-group-item-action" target="_blank">
+                                <i class="fas fa-heartbeat me-2"></i>System Health Check
+                            </a>
+                            <a href="/reports" class="list-group-item list-group-item-action">
+                                <i class="fas fa-chart-bar me-2"></i>Detailed Reports
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Progress Modal for Bulk Operations -->
+<div class="modal fade" id="bulkOperationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-sync-alt me-2"></i>Bulk Processing
+                </h5>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                <div class="progress mb-3">
+                    <div id="bulkProgress" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                </div>
+                <div id="bulkStatus" class="text-center">
+                    Processing students for missing modules...
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Student search functionality
+async function searchStudent(event) {
+    event.preventDefault();
+    const studentNumber = document.getElementById('studentSearchInput').value;
+    const resultDiv = document.getElementById('studentSearchResult');
+    
+    try {
+        const response = await fetch(`/api/students/${studentNumber}`);
+        if (response.ok) {
+            const student = await response.json();
+            
+            // Check for missing modules
+            const missingResponse = await fetch(`/api/check-missing-modules/${studentNumber}`, {
+                method: 'POST'
+            });
+            const missingData = await missingResponse.json();
+            
+            resultDiv.innerHTML = `
+                <div class="alert alert-info">
+                    <h6 class="alert-heading">Student Found: ${student.name}</h6>
+                    <p class="mb-1"><strong>Plan Code:</strong> ${student.plan_code || 'Not specified'}</p>
+                    <p class="mb-1"><strong>Campus:</strong> ${student.campus_name || 'Not specified'}</p>
+                    <p class="mb-0"><strong>Missing Modules:</strong> ${missingData.missing_modules.length}</p>
+                </div>
+            `;
+            resultDiv.classList.remove('d-none');
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-warning">
+                    Student not found with number: ${studentNumber}
+                </div>
+            `;
+            resultDiv.classList.remove('d-none');
+        }
+    } catch (error) {
+        resultDiv.innerHTML = `
+            <div class="alert alert-danger">
+                Error searching for student: ${error.message}
+            </div>
+        `;
+        resultDiv.classList.remove('d-none');
+    }
+}
+
+// Bulk check missing modules
+async function bulkCheckMissingModules() {
+    const modal = new bootstrap.Modal(document.getElementById('bulkOperationModal'));
+    modal.show();
+    
+    try {
+        const response = await fetch('/api/bulk-check-missing-modules', {
+            method: 'POST'
+        });
+        const result = await response.json();
+        
+        modal.hide();
+        
+        if (result.status === 'completed') {
+            alert(`Bulk check completed!\n\nProcessed: ${result.total_records_processed} students\nSuccessful: ${result.successful_records}\nTime: ${result.processing_time_seconds.toFixed(2)}s`);
+            // Refresh the page to update statistics
+            window.location.reload();
+        } else {
+            alert('Bulk check completed with errors. Check the console for details.');
+        }
+    } catch (error) {
+        modal.hide();
+        alert('Error during bulk check: ' + error.message);
+    }
+}
+</script>
+{% endblock %} 

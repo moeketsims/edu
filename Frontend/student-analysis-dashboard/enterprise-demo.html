@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Academic Analytics Dashboard - Demo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Enterprise Dashboard CSS - Copy from index.css */
+        :root {
+            --primary-50: #eff6ff;
+            --primary-500: #3b82f6;
+            --primary-600: #2563eb;
+            --primary-700: #1d4ed8;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-900: #111827;
+            --success-50: #ecfdf5;
+            --success-500: #10b981;
+            --success-600: #059669;
+            --warning-50: #fffbeb;
+            --warning-500: #f59e0b;
+            --error-50: #fef2f2;
+            --error-500: #ef4444;
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-size-xs: 0.75rem;
+            --font-size-sm: 0.875rem;
+            --font-size-base: 1rem;
+            --font-size-lg: 1.125rem;
+            --font-size-xl: 1.25rem;
+            --font-size-2xl: 1.5rem;
+            --font-size-3xl: 1.875rem;
+            --font-size-4xl: 2.25rem;
+            --transition-fast: 150ms ease-in-out;
+            --transition-normal: 250ms ease-in-out;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: var(--font-family);
+            font-size: var(--font-size-base);
+            line-height: 1.6;
+            color: var(--gray-900);
+            background-color: var(--gray-50);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .app { min-height: 100vh; display: flex; flex-direction: column; }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
+            color: white;
+            padding: var(--spacing-lg) var(--spacing-xl);
+            box-shadow: var(--shadow-lg);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-title h1 {
+            font-size: var(--font-size-3xl);
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .header-subtitle {
+            font-size: var(--font-size-sm);
+            opacity: 0.9;
+            margin-top: var(--spacing-xs);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: var(--spacing-xl);
+            flex: 1;
+        }
+
+        .grid {
+            display: grid;
+            gap: var(--spacing-lg);
+        }
+
+        .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+        .metric-card {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition-normal);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
+        }
+
+        .metric-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .metric-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .metric-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-size-xl);
+        }
+
+        .metric-change {
+            font-size: var(--font-size-xs);
+            font-weight: 600;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-sm);
+        }
+
+        .metric-change.positive {
+            background: var(--success-50);
+            color: var(--success-600);
+        }
+
+        .metric-value {
+            font-size: var(--font-size-4xl);
+            font-weight: 700;
+            color: var(--gray-900);
+            line-height: 1;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .metric-title {
+            font-size: var(--font-size-sm);
+            color: var(--gray-500);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .chart-container {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition-normal);
+        }
+
+        .chart-container:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .chart-title {
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: var(--spacing-lg);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .donut-chart {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xl);
+        }
+
+        .donut-svg {
+            width: 200px;
+            height: 200px;
+            flex-shrink: 0;
+        }
+
+        .donut-center-text {
+            font-size: var(--font-size-2xl);
+            font-weight: 700;
+            fill: var(--gray-900);
+        }
+
+        .donut-center-label {
+            font-size: var(--font-size-xs);
+            fill: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .chart-legend {
+            flex: 1;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm);
+            border-radius: var(--radius-sm);
+            transition: background-color var(--transition-fast);
+            cursor: pointer;
+        }
+
+        .legend-item:hover {
+            background-color: var(--gray-50);
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .legend-label {
+            flex: 1;
+            font-size: var(--font-size-sm);
+            color: var(--gray-700);
+        }
+
+        .legend-value {
+            font-size: var(--font-size-sm);
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .bar-chart {
+            display: flex;
+            align-items: end;
+            gap: var(--spacing-md);
+            height: 200px;
+            padding: var(--spacing-md) 0;
+        }
+
+        .bar-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .bar-container {
+            position: relative;
+            width: 100%;
+            height: 150px;
+            display: flex;
+            align-items: end;
+            justify-content: center;
+        }
+
+        .bar-fill {
+            width: 60%;
+            min-height: 8px;
+            border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+            transition: all var(--transition-normal);
+            position: relative;
+            cursor: pointer;
+        }
+
+        .bar-fill:hover {
+            transform: scaleY(1.05);
+            filter: brightness(1.1);
+        }
+
+        .bar-value {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: var(--font-size-xs);
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .bar-label {
+            font-size: var(--font-size-xs);
+            color: var(--gray-600);
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .line-chart {
+            position: relative;
+        }
+
+        .line-svg {
+            width: 100%;
+            height: 150px;
+        }
+
+        .line-point {
+            transition: all var(--transition-fast);
+            cursor: pointer;
+        }
+
+        .line-point:hover {
+            r: 6;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        .line-chart-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: var(--spacing-sm);
+        }
+
+        .line-label {
+            font-size: var(--font-size-xs);
+            color: var(--gray-600);
+            font-weight: 500;
+        }
+
+        .mb-6 { margin-bottom: var(--spacing-lg); }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .demo-note {
+            background: var(--primary-50);
+            border: 1px solid var(--primary-200);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+            color: var(--primary-800);
+        }
+
+        @media (max-width: 768px) {
+            .grid-cols-4, .grid-cols-2 {
+                grid-template-columns: 1fr;
+            }
+            .donut-chart {
+                flex-direction: column;
+                gap: var(--spacing-lg);
+            }
+            .donut-svg {
+                width: 150px;
+                height: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-title">
+                    <div>
+                        <h1>🎓 Academic Analytics Dashboard</h1>
+                        <p class="header-subtitle">Enterprise Student Progress Management System - Demo</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="container">
+            <!-- Demo Notice -->
+            <div class="demo-note fade-in">
+                <h3>🚀 Enterprise Dashboard Features Demo</h3>
+                <p>This demonstrates the beautiful data visualizations and advanced UI components of your React dashboard. The actual React app is running on <strong>http://localhost:3001</strong> with real backend connectivity!</p>
+            </div>
+
+            <!-- Key Metrics -->
+            <div class="grid grid-cols-4 mb-6 fade-in">
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-icon" style="background-color: var(--primary-50); color: var(--primary-500)">
+                            👥
+                        </div>
+                        <div class="metric-change positive">
+                            ↗ 5.2%
+                        </div>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-value">1,247</div>
+                        <div class="metric-title">Total Students</div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-icon" style="background-color: var(--success-50); color: var(--success-500)">
+                            📈
+                        </div>
+                        <div class="metric-change positive">
+                            ↗ 2.1%
+                        </div>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-value">84.3%</div>
+                        <div class="metric-title">Average Completion</div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-icon" style="background-color: var(--error-50); color: var(--error-500)">
+                            ⚠️
+                        </div>
+                        <div class="metric-change positive">
+                            ↗ -3.5%
+                        </div>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-value">127</div>
+                        <div class="metric-title">Students at Risk</div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-icon" style="background-color: var(--warning-50); color: var(--warning-500)">
+                            🌟
+                        </div>
+                        <div class="metric-change positive">
+                            ↗ 8.7%
+                        </div>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-value">293</div>
+                        <div class="metric-title">Excellent Performance</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-2 mb-6 fade-in">
+                <!-- Donut Chart -->
+                <div class="chart-container">
+                    <h3 class="chart-title">📊 Completion Distribution</h3>
+                    <div class="donut-chart">
+                        <svg viewBox="0 0 200 200" class="donut-svg">
+                            <!-- 90-100% - 293 students (23.5%) -->
+                            <path d="M 100 100 L 100 30 A 70 70 0 0 1 170 100 Z" fill="var(--success-500)" stroke="white" stroke-width="2"/>
+                            <!-- 75-89% - 456 students (36.6%) -->
+                            <path d="M 100 100 L 170 100 A 70 70 0 0 1 100 170 Z" fill="var(--primary-500)" stroke="white" stroke-width="2"/>
+                            <!-- 60-74% - 371 students (29.7%) -->
+                            <path d="M 100 100 L 100 170 A 70 70 0 0 1 30 100 Z" fill="var(--warning-500)" stroke="white" stroke-width="2"/>
+                            <!-- Below 60% - 127 students (10.2%) -->
+                            <path d="M 100 100 L 30 100 A 70 70 0 0 1 100 30 Z" fill="var(--error-500)" stroke="white" stroke-width="2"/>
+                            <circle cx="100" cy="100" r="45" fill="white"/>
+                            <text x="100" y="95" text-anchor="middle" class="donut-center-text">1,247</text>
+                            <text x="100" y="110" text-anchor="middle" class="donut-center-label">Total</text>
+                        </svg>
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: var(--success-500)"></div>
+                                <span class="legend-label">90-100%</span>
+                                <span class="legend-value">293</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: var(--primary-500)"></div>
+                                <span class="legend-label">75-89%</span>
+                                <span class="legend-value">456</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: var(--warning-500)"></div>
+                                <span class="legend-label">60-74%</span>
+                                <span class="legend-value">371</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: var(--error-500)"></div>
+                                <span class="legend-label">Below 60%</span>
+                                <span class="legend-value">127</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bar Chart -->
+                <div class="chart-container">
+                    <h3 class="chart-title">🎯 Academic Level Distribution</h3>
+                    <div class="bar-chart">
+                        <div class="bar-item">
+                            <div class="bar-container">
+                                <div class="bar-fill" style="height: 75%; background-color: hsl(220, 70%, 50%)">
+                                    <span class="bar-value">384</span>
+                                </div>
+                            </div>
+                            <span class="bar-label">Level 1</span>
+                        </div>
+                        <div class="bar-item">
+                            <div class="bar-container">
+                                <div class="bar-fill" style="height: 85%; background-color: hsl(250, 70%, 50%)">
+                                    <span class="bar-value">421</span>
+                                </div>
+                            </div>
+                            <span class="bar-label">Level 2</span>
+                        </div>
+                        <div class="bar-item">
+                            <div class="bar-container">
+                                <div class="bar-fill" style="height: 60%; background-color: hsl(280, 70%, 50%)">
+                                    <span class="bar-value">298</span>
+                                </div>
+                            </div>
+                            <span class="bar-label">Level 3</span>
+                        </div>
+                        <div class="bar-item">
+                            <div class="bar-container">
+                                <div class="bar-fill" style="height: 40%; background-color: hsl(310, 70%, 50%)">
+                                    <span class="bar-value">144</span>
+                                </div>
+                            </div>
+                            <span class="bar-label">Level 4</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 mb-6 fade-in">
+                <!-- Line Chart -->
+                <div class="chart-container">
+                    <h3 class="chart-title">📈 Progress Trend (6 Months)</h3>
+                    <div class="line-chart">
+                        <svg viewBox="0 0 300 150" class="line-svg">
+                            <defs>
+                                <linearGradient id="lineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stop-color="var(--primary-500)" stop-opacity="0.3"/>
+                                    <stop offset="100%" stop-color="var(--primary-500)" stop-opacity="0.1"/>
+                                </linearGradient>
+                            </defs>
+                            <polyline points="0,120 60,110 120,100 180,85 240,75 300,60" 
+                                      fill="none" stroke="var(--primary-500)" stroke-width="3" stroke-linecap="round"/>
+                            <polyline points="0,120 60,110 120,100 180,85 240,75 300,60 300,150 0,150" 
+                                      fill="url(#lineGradient)" stroke="none"/>
+                            <circle cx="0" cy="120" r="4" fill="var(--primary-500)" stroke="white" stroke-width="2" class="line-point"/>
+                            <circle cx="60" cy="110" r="4" fill="var(--primary-500)" stroke="white" stroke-width="2" class="line-point"/>
+                            <circle cx="120" cy="100" r="4" fill="var(--primary-500)" stroke="white" stroke-width="2" class="line-point"/>
+                            <circle cx="180" cy="85" r="4" fill="var(--primary-500)" stroke="white" stroke-width="2" class="line-point"/>
+                            <circle cx="240" cy="75" r="4" fill="var(--primary-500)" stroke="white" stroke-width="2" class="line-point"/>
+                            <circle cx="300" cy="60" r="4" fill="var(--primary-500)" stroke="white" stroke-width="2" class="line-point"/>
+                        </svg>
+                        <div class="line-chart-labels">
+                            <span class="line-label">Jan</span>
+                            <span class="line-label">Feb</span>
+                            <span class="line-label">Mar</span>
+                            <span class="line-label">Apr</span>
+                            <span class="line-label">May</span>
+                            <span class="line-label">Jun</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Another Donut Chart -->
+                <div class="chart-container">
+                    <h3 class="chart-title">📚 Top 5 Study Plans</h3>
+                    <div class="donut-chart">
+                        <svg viewBox="0 0 200 200" class="donut-svg">
+                            <!-- Computer Science - 25% -->
+                            <path d="M 100 100 L 100 30 A 70 70 0 0 1 170 100 Z" fill="hsl(0, 65%, 55%)" stroke="white" stroke-width="2"/>
+                            <!-- Engineering - 22% -->
+                            <path d="M 100 100 L 170 100 A 70 70 0 0 1 130 165 Z" fill="hsl(72, 65%, 55%)" stroke="white" stroke-width="2"/>
+                            <!-- Business - 20% -->
+                            <path d="M 100 100 L 130 165 A 70 70 0 0 1 70 165 Z" fill="hsl(144, 65%, 55%)" stroke="white" stroke-width="2"/>
+                            <!-- Medicine - 18% -->
+                            <path d="M 100 100 L 70 165 A 70 70 0 0 1 30 100 Z" fill="hsl(216, 65%, 55%)" stroke="white" stroke-width="2"/>
+                            <!-- Arts - 15% -->
+                            <path d="M 100 100 L 30 100 A 70 70 0 0 1 100 30 Z" fill="hsl(288, 65%, 55%)" stroke="white" stroke-width="2"/>
+                            <circle cx="100" cy="100" r="45" fill="white"/>
+                            <text x="100" y="95" text-anchor="middle" class="donut-center-text">5</text>
+                            <text x="100" y="110" text-anchor="middle" class="donut-center-label">Plans</text>
+                        </svg>
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: hsl(0, 65%, 55%)"></div>
+                                <span class="legend-label">Computer Science</span>
+                                <span class="legend-value">312</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: hsl(72, 65%, 55%)"></div>
+                                <span class="legend-label">Engineering</span>
+                                <span class="legend-value">274</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: hsl(144, 65%, 55%)"></div>
+                                <span class="legend-label">Business</span>
+                                <span class="legend-value">249</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: hsl(216, 65%, 55%)"></div>
+                                <span class="legend-label">Medicine</span>
+                                <span class="legend-value">224</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: hsl(288, 65%, 55%)"></div>
+                                <span class="legend-label">Arts</span>
+                                <span class="legend-value">188</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Call to Action -->
+            <div class="demo-note fade-in">
+                <h3>✨ Experience the Full Dashboard</h3>
+                <p><strong>Ready to see your data in action?</strong> Visit <a href="http://localhost:3001" target="_blank" style="color: var(--primary-600); text-decoration: none; font-weight: 600;">http://localhost:3001</a> to interact with the live React dashboard featuring:</p>
+                <ul style="margin-top: 1rem; padding-left: 1.5rem;">
+                    <li>🔍 Advanced search and filtering</li>
+                    <li>📊 Real-time data visualizations</li>
+                    <li>📱 Responsive mobile design</li>
+                    <li>⚡ Interactive charts and metrics</li>
+                    <li>🎯 Student progress tracking</li>
+                    <li>📈 Analytics and reporting</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add some interactivity to the demo
+        document.querySelectorAll('.metric-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-4px) scale(1.02)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(-2px) scale(1)';
+            });
+        });
+
+        document.querySelectorAll('.bar-fill').forEach(bar => {
+            bar.addEventListener('mouseenter', () => {
+                bar.style.transform = 'scaleY(1.1)';
+                bar.style.filter = 'brightness(1.2)';
+            });
+            bar.addEventListener('mouseleave', () => {
+                bar.style.transform = 'scaleY(1)';
+                bar.style.filter = 'brightness(1)';
+            });
+        });
+
+        document.querySelectorAll('.line-point').forEach(point => {
+            point.addEventListener('mouseenter', () => {
+                point.setAttribute('r', '6');
+            });
+            point.addEventListener('mouseleave', () => {
+                point.setAttribute('r', '4');
+            });
+        });
+
+        // Animate elements on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'all 0.6s ease-out';
+            observer.observe(el);
+        });
+
+        console.log('🎉 Enterprise Academic Analytics Dashboard Demo Loaded!');
+        console.log('Visit http://localhost:3001 for the full React experience');
+    </script>
+</body>
+</html> 

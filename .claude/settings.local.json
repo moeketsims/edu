@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker-compose down:*)",
+      "Bash(docker-compose build:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker rm:*)",
+      "Bash(npm start)",
+      "Bash(lsof:*)",
+      "Bash(kill:*)",
+      "Bash(BROWSER=none npm start)",
+      "Bash(docker-compose:*)",
+      "Bash(ls:*)",
+      "Bash(source:*)",
+      "Bash(python3:*)",
+      "Bash(uvicorn:*)",
+      "Bash(docker:*)",
+      "Bash(open:*)",
+      "Bash(curl:*)"
+    ],
+    "deny": []
+  }
+}
