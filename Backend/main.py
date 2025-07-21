@@ -285,6 +285,38 @@ def export_missing_modules_report(format: str = "csv", db: Session = Depends(get
     """Export missing modules report (CSV or Excel)"""
     return DataLoaderService.export_missing_modules_report(db, format)
 
+@app.get("/api/debug/plan-modules/{plan_code}")
+def debug_plan_modules(plan_code: str, db: Session = Depends(get_db)):
+    """Debug endpoint to check plan_modules data"""
+    from sqlalchemy import text
+    try:
+        # Get plan_modules data
+        query = text("""
+            SELECT module_code, year, phase, is_required, credits 
+            FROM plan_modules 
+            WHERE plan_code = :plan_code 
+            ORDER BY year, module_code
+            LIMIT 20
+        """)
+        result = db.execute(query, {"plan_code": plan_code}).fetchall()
+        
+        return {
+            "plan_code": plan_code,
+            "modules": [
+                {
+                    "module_code": row.module_code,
+                    "year": row.year,
+                    "phase": row.phase,
+                    "is_required": row.is_required,
+                    "credits": row.credits
+                }
+                for row in result
+            ],
+            "total_found": len(result)
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000) 

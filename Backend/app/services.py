@@ -1171,7 +1171,14 @@ class DataLoaderService:
             
             # Group plan requirements by academic year
             requirements_by_year = {"1st": [], "2nd": [], "3rd": [], "4th": []}
-            year_mapping = {"First Year": "1st", "Second Year": "2nd", "Third Year": "3rd", "Fourth Year": "4th"}
+            year_mapping = {
+                "First Year": "1st", 
+                "Second Year": "2nd", 
+                "Third Year": "3rd", 
+                "Fourth Year": "4th",
+                "Fifth Year": "5th",
+                "Sixth Year": "6th"
+            }
             
             for req in plan_requirements:
                 req_year = req.year or "First Year"
@@ -1391,6 +1398,7 @@ class DataLoaderService:
                         'is_required': getattr(req, 'is_required', True)
                     })
                 else:
+                    # It's already a dictionary
                     formatted_requirements.append(req)
             
             # Analyze missing modules by year - ONLY for years up to current academic level
@@ -1994,6 +2002,51 @@ class ReportService:
             if not plan_code:
                 return {"error": "Student has no plan code", "student_number": student_number}
             
+            # Check if plan has requirements defined
+            plan_requirements_check = db.query(plan_modules).filter(
+                plan_modules.c.plan_code == plan_code
+            ).first()
+            
+            if not plan_requirements_check:
+                # Return graceful response for undefined plan codes
+                all_student_modules = db.query(StudentModule).filter(
+                    StudentModule.student_number == student_number
+                ).all()
+                
+                passed_modules = sum(1 for m in all_student_modules if m.final_mark and m.final_mark >= 50)
+                
+                return {
+                    "student_number": student_number,
+                    "student_name": student.name,
+                    "plan_code": plan_code,
+                    "plan_description": student.plan_description,
+                    "current_year": "2024",
+                    "current_academic_level": "Unknown",
+                    
+                    # Summary statistics
+                    "summary": {
+                        "total_required_modules": 0,
+                        "total_modules_passed": passed_modules,
+                        "total_modules_failed": 0,
+                        "total_retakes": 0,
+                        "total_missing_modules": 0,
+                        "completion_percentage": 0
+                    },
+                    
+                    # Empty data structures
+                    "modules_by_year": {},
+                    "retake_analysis": {"total_retakes": 0, "retake_details": [], "all_modules_analysis": {}},
+                    "missing_modules_by_year": {"1st": [], "2nd": [], "3rd": [], "4th": [], "Other": []},
+                    "outstanding_modules": {
+                        "total_outstanding": 0,
+                        "by_year": {"1st": [], "2nd": [], "3rd": [], "4th": [], "Other": []},
+                        "by_phase": {"Foundation": [], "Intermediate": [], "Advanced": [], "Other": []}
+                    },
+                    
+                    "undefined_plan": True,
+                    "analysis_timestamp": datetime.now().isoformat()
+                }
+            
             # Get all student modules (including failed and retakes)
             all_student_modules = db.query(StudentModule).filter(
                 StudentModule.student_number == student_number
@@ -2016,7 +2069,14 @@ class ReportService:
             
             # Group plan requirements by academic year
             requirements_by_year = {"1st": [], "2nd": [], "3rd": [], "4th": []}
-            year_mapping = {"First Year": "1st", "Second Year": "2nd", "Third Year": "3rd", "Fourth Year": "4th"}
+            year_mapping = {
+                "First Year": "1st", 
+                "Second Year": "2nd", 
+                "Third Year": "3rd", 
+                "Fourth Year": "4th",
+                "Fifth Year": "5th",
+                "Sixth Year": "6th"
+            }
             
             for req in plan_requirements:
                 req_year = req.year or "First Year"
@@ -2441,16 +2501,34 @@ class ReportService:
             
             # Group requirements by plan and year
             requirements_by_plan_year = {}
-            year_mapping = {"First Year": "1st", "Second Year": "2nd", "Third Year": "3rd", "Fourth Year": "4th"}
+            year_mapping = {
+                "First Year": "1st", 
+                "Second Year": "2nd", 
+                "Third Year": "3rd", 
+                "Fourth Year": "4th",
+                "Fifth Year": "5th",
+                "Sixth Year": "6th"
+            }
             
             for req in plan_requirements:
                 plan = req.plan_code
                 year = year_mapping.get(req.year or "First Year", "1st")
                 
                 if plan not in requirements_by_plan_year:
-                    requirements_by_plan_year[plan] = {"1st": set(), "2nd": set(), "3rd": set(), "4th": set()}
+                    # Extended programmes (with "E" in code) support 5th/6th years
+                    is_extended = "E" in plan.upper()
+                    if is_extended:
+                        requirements_by_plan_year[plan] = {"1st": set(), "2nd": set(), "3rd": set(), "4th": set(), "5th": set(), "6th": set()}
+                    else:
+                        requirements_by_plan_year[plan] = {"1st": set(), "2nd": set(), "3rd": set(), "4th": set()}
                 
-                requirements_by_plan_year[plan][year].add(req.module_code)
+                # Only add 5th/6th year modules for extended programmes
+                if year in ["5th", "6th"] and "E" not in plan.upper():
+                    print(f"⚠️  Skipping {year} module {req.module_code} for regular programme {plan}")
+                    continue
+                    
+                if year in requirements_by_plan_year[plan]:
+                    requirements_by_plan_year[plan][year].add(req.module_code)
             
             # Group student modules by student
             student_modules_dict = {}
@@ -2467,10 +2545,10 @@ class ReportService:
             
             results = {
                 "analysis_summary": {"total_students_analyzed": 0, "successful_analyses": 0, "failed_analyses": 0, "processing_time_seconds": 0},
-                "academic_level_distribution": {"1st": 0, "2nd": 0, "3rd": 0, "4th": 0},
+                "academic_level_distribution": {"1st": 0, "2nd": 0, "3rd": 0, "4th": 0, "5th": 0, "6th": 0},
                 "missing_modules_summary": {
                     "total_missing_modules": 0, "students_with_missing": 0,
-                    "missing_by_year": {"1st": 0, "2nd": 0, "3rd": 0, "4th": 0},
+                    "missing_by_year": {"1st": 0, "2nd": 0, "3rd": 0, "4th": 0, "5th": 0, "6th": 0},
                     "most_common_missing": {}
                 },
                 "retakes_summary": {"total_retakes": 0, "students_with_retakes": 0, "most_retaken_modules": {}},
@@ -2503,18 +2581,23 @@ class ReportService:
                         # Handle students without plan requirements gracefully
                         print(f"⚠️  Student {student_num} has no plan requirements (plan: {plan})")
                         
+                        # Get basic student data to show meaningful information
+                        modules = student_modules_dict.get(student_num, [])
+                        passed_modules = sum(1 for m in modules if m.final_mark and m.final_mark >= 50)
+                        
                         # Still add them to results with basic info
                         results["individual_student_results"].append({
                             "student_number": student_num,
                             "student_name": student.name,
                             "plan_code": plan or "Unknown",
-                            "current_academic_level": getattr(student, 'academic_level', 'Unknown'),
-                            "total_modules_passed": 0,
+                            "current_academic_level": "Unknown",
+                            "total_modules_passed": passed_modules,
                             "total_modules_required": 0,
                             "total_missing_modules": 0,
                             "total_retakes": 0,
                             "completion_percentage": 0,
-                            "missing_modules_details": []
+                            "missing_modules_details": [],
+                            "undefined_plan": True
                         })
                         successful += 1
                         continue
@@ -2570,7 +2653,11 @@ class ReportService:
                     requirements = requirements_by_plan_year[plan]
                     academic_level = "1st"
                     
-                    for level in ["4th", "3rd", "2nd", "1st"]:
+                    # Check levels dynamically based on programme type
+                    is_extended = "E" in plan.upper()
+                    available_levels = ["6th", "5th", "4th", "3rd", "2nd", "1st"] if is_extended else ["4th", "3rd", "2nd", "1st"]
+                    
+                    for level in available_levels:
                         required = requirements[level]
                         if not required:
                             continue
@@ -2584,10 +2671,14 @@ class ReportService:
                         if coverage_rate >= 1.0:  # 100% coverage
                             # Check prerequisites
                             can_be_at_level = True
-                            level_hierarchy = {"1st": 1, "2nd": 2, "3rd": 3, "4th": 4}
+                            level_hierarchy = {"1st": 1, "2nd": 2, "3rd": 3, "4th": 4, "5th": 5, "6th": 6}
                             current_level_num = level_hierarchy[level]
                             
-                            for prev_level in ["1st", "2nd", "3rd"]:
+                            # Check completion of previous levels (up to max available level)
+                            max_prev_level = 5 if is_extended else 3
+                            prev_levels = ["1st", "2nd", "3rd", "4th", "5th"][:max_prev_level]
+                            
+                            for prev_level in prev_levels:
                                 prev_level_num = level_hierarchy[prev_level]
                                 if prev_level_num >= current_level_num:
                                     break
@@ -2605,13 +2696,26 @@ class ReportService:
                                 break
                     
                     # Calculate missing modules (only up to current academic level)
-                    level_hierarchy = {"1st": 1, "2nd": 2, "3rd": 3, "4th": 4}
+                    level_hierarchy = {"1st": 1, "2nd": 2, "3rd": 3, "4th": 4, "5th": 5, "6th": 6}
                     current_level_num = level_hierarchy[academic_level]
+                    
+                    # Only check levels available for this programme type
+                    is_extended = "E" in plan.upper()
+                    max_level = 6 if is_extended else 4
+                    
+                    # Debug: Track which levels we're checking for this student
+                    if processed_so_far < 3:  # Only for first few students
+                        print(f"🎯 DEBUG Student {student_num}: Academic level = {academic_level} (level {current_level_num})")
+                        print(f"   Will check missing modules for levels: {[level for level, req_set in requirements.items() if level_hierarchy.get(level, 0) <= current_level_num]}")
                     
                     missing_modules = []
                     for level, required_set in requirements.items():
                         level_num = level_hierarchy[level]
-                        if level_num <= current_level_num:
+                        if level_num <= current_level_num and level_num <= max_level:
+                            # Debug: Log which year we're processing
+                            if processed_so_far < 3:
+                                print(f"   ✅ Checking {level} year modules ({len(required_set)} modules)")
+                            
                             for module_code in required_set:
                                 # Handle elective modules with OR conditions
                                 elective_options = parse_elective_modules(module_code)
@@ -2640,6 +2744,11 @@ class ReportService:
                                             "phase": "Foundation",  # Default
                                             "is_elective": False
                                         })
+                        else:
+                            # Debug: Log which years we're SKIPPING
+                            if processed_so_far < 3:
+                                reason = "future year" if level_num > current_level_num else "not available for programme type"
+                                print(f"   ⏭️  SKIPPING {level} year modules ({len(required_set)} modules) - {reason}")
                     
                     # Get module names and additional details for missing modules
                     if missing_modules:
@@ -2689,6 +2798,15 @@ class ReportService:
                                     missing_module["credits"] = 0
                             
                             missing_module["priority"] = "High" if missing_module["required_year"] == academic_level else "Normal"
+                    
+                    # Debug: Show final missing modules count and breakdown
+                    if processed_so_far < 3:
+                        print(f"🎯 FINAL: Student {student_num} missing {len(missing_modules)} modules")
+                        missing_by_year = {}
+                        for m in missing_modules:
+                            year = m["required_year"]
+                            missing_by_year[year] = missing_by_year.get(year, 0) + 1
+                        print(f"   Breakdown: {missing_by_year}")
                     
                     # Calculate completion percentage - CORRECT: 
                     # Numerator: ALL modules student has passed (across all years)
@@ -2995,7 +3113,14 @@ class ReportService:
             
             # Process the data using our existing fast logic
             requirements_by_plan_year = {}
-            year_mapping = {"First Year": "1st", "Second Year": "2nd", "Third Year": "3rd", "Fourth Year": "4th"}
+            year_mapping = {
+                "First Year": "1st", 
+                "Second Year": "2nd", 
+                "Third Year": "3rd", 
+                "Fourth Year": "4th",
+                "Fifth Year": "5th",
+                "Sixth Year": "6th"
+            }
             
             for req in plan_requirements:
                 plan = req.plan_code
