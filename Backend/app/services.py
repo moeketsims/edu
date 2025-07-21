@@ -1413,19 +1413,14 @@ class DataLoaderService:
                 plan_modules.c.plan_code == plan_code
             ).all()
             
+            print(f"🐛 DEBUG: Plan {plan_code} - query returned {len(plan_requirements)} requirements")
+            if plan_requirements:
+                print(f"🐛 DEBUG: First requirement: {plan_requirements[0] if hasattr(plan_requirements[0], '__dict__') else dict(plan_requirements[0])}")
+            
             # If no plan requirements found, use fallback
             if not plan_requirements:
-                all_modules = db.query(Module).all()
+                print(f"⚠️ No plan requirements found for {plan_code}, skipping missing modules analysis")
                 plan_requirements = []
-                for module in all_modules:
-                    plan_requirements.append({
-                        'module_code': module.code,
-                        'module_name': module.name,
-                        'year': '1st',
-                        'phase': module.phase or 'Other',
-                        'credits': module.credits,
-                        'is_required': True
-                    })
             
             # Convert plan_requirements to consistent format
             formatted_requirements = []
@@ -2314,19 +2309,14 @@ class ReportService:
                 plan_modules.c.plan_code == plan_code
             ).all()
             
+            print(f"🐛 DEBUG: Plan {plan_code} - query returned {len(plan_requirements)} requirements")
+            if plan_requirements:
+                print(f"🐛 DEBUG: First requirement: {plan_requirements[0] if hasattr(plan_requirements[0], '__dict__') else dict(plan_requirements[0])}")
+            
             # If no plan requirements found, use fallback
             if not plan_requirements:
-                all_modules = db.query(Module).all()
+                print(f"⚠️ No plan requirements found for {plan_code}, skipping missing modules analysis")
                 plan_requirements = []
-                for module in all_modules:
-                    plan_requirements.append({
-                        'module_code': module.code,
-                        'module_name': module.name,
-                        'year': '1st',
-                        'phase': module.phase or 'Other',
-                        'credits': module.credits,
-                        'is_required': True
-                    })
             
             # Convert plan_requirements to consistent format
             formatted_requirements = []
@@ -2341,6 +2331,7 @@ class ReportService:
                         'is_required': getattr(req, 'is_required', True)
                     })
                 else:
+                    # It's already a dictionary
                     formatted_requirements.append(req)
             
             # Analyze missing modules by year - ONLY for years up to current academic level
