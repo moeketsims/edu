@@ -303,6 +303,20 @@ class DataLoaderService:
                         'credits': getattr(req, 'credits', 0),
                         'is_required': getattr(req, 'is_required', True)
                     })
+                elif isinstance(req, tuple):
+                    # It's a tuple from the database query
+                    # Expected format: (plan_code, module_code, year, phase, is_required, credits, ...)
+                    if len(req) >= 6:
+                        formatted_requirements.append({
+                            'module_code': req[1],  # module_code is at index 1
+                            'module_name': None,  # Not available in tuple
+                            'year': req[2] if req[2] else '1st',  # year is at index 2
+                            'phase': req[3] if req[3] else 'Other',  # phase is at index 3
+                            'credits': req[5] if len(req) > 5 and req[5] else 0,  # credits is at index 5
+                            'is_required': req[4] if len(req) > 4 else True  # is_required is at index 4
+                        })
+                    else:
+                        print(f"⚠️ Skipping malformed requirement tuple: {req}")
                 else:
                     # It's already a dictionary
                     formatted_requirements.append(req)
@@ -1404,7 +1418,7 @@ class DataLoaderService:
             
             print(f"🐛 DEBUG: Plan {plan_code} - query returned {len(plan_requirements)} requirements")
             if plan_requirements:
-                print(f"🐛 DEBUG: First requirement: {plan_requirements[0] if hasattr(plan_requirements[0], '__dict__') else dict(plan_requirements[0])}")
+                print(f"🐛 DEBUG: First requirement: {plan_requirements[0]}")
             
             # If no plan requirements found, use fallback
             if not plan_requirements:
@@ -1415,6 +1429,7 @@ class DataLoaderService:
             formatted_requirements = []
             for req in plan_requirements:
                 if hasattr(req, 'module_code'):
+                    # It's an object with attributes
                     formatted_requirements.append({
                         'module_code': req.module_code,
                         'module_name': getattr(req, 'module_name', None),
@@ -1423,6 +1438,20 @@ class DataLoaderService:
                         'credits': getattr(req, 'credits', 0),
                         'is_required': getattr(req, 'is_required', True)
                     })
+                elif isinstance(req, tuple):
+                    # It's a tuple from the database query
+                    # Expected format: (plan_code, module_code, year, phase, is_required, credits, ...)
+                    if len(req) >= 6:
+                        formatted_requirements.append({
+                            'module_code': req[1],  # module_code is at index 1
+                            'module_name': None,  # Not available in tuple
+                            'year': req[2] if req[2] else '1st',  # year is at index 2
+                            'phase': req[3] if req[3] else 'Other',  # phase is at index 3
+                            'credits': req[5] if len(req) > 5 and req[5] else 0,  # credits is at index 5
+                            'is_required': req[4] if len(req) > 4 else True  # is_required is at index 4
+                        })
+                    else:
+                        print(f"⚠️ Skipping malformed requirement tuple: {req}")
                 else:
                     # It's already a dictionary
                     formatted_requirements.append(req)
@@ -2301,7 +2330,7 @@ class ReportService:
             
             print(f"🐛 DEBUG: Plan {plan_code} - query returned {len(plan_requirements)} requirements")
             if plan_requirements:
-                print(f"🐛 DEBUG: First requirement: {plan_requirements[0] if hasattr(plan_requirements[0], '__dict__') else dict(plan_requirements[0])}")
+                print(f"🐛 DEBUG: First requirement: {plan_requirements[0]}")
             
             # If no plan requirements found, use fallback
             if not plan_requirements:
@@ -2312,6 +2341,7 @@ class ReportService:
             formatted_requirements = []
             for req in plan_requirements:
                 if hasattr(req, 'module_code'):
+                    # It's an object with attributes
                     formatted_requirements.append({
                         'module_code': req.module_code,
                         'module_name': getattr(req, 'module_name', None),
@@ -2320,6 +2350,20 @@ class ReportService:
                         'credits': getattr(req, 'credits', 0),
                         'is_required': getattr(req, 'is_required', True)
                     })
+                elif isinstance(req, tuple):
+                    # It's a tuple from the database query
+                    # Expected format: (plan_code, module_code, year, phase, is_required, credits, ...)
+                    if len(req) >= 6:
+                        formatted_requirements.append({
+                            'module_code': req[1],  # module_code is at index 1
+                            'module_name': None,  # Not available in tuple
+                            'year': req[2] if req[2] else '1st',  # year is at index 2
+                            'phase': req[3] if req[3] else 'Other',  # phase is at index 3
+                            'credits': req[5] if len(req) > 5 and req[5] else 0,  # credits is at index 5
+                            'is_required': req[4] if len(req) > 4 else True  # is_required is at index 4
+                        })
+                    else:
+                        print(f"⚠️ Skipping malformed requirement tuple: {req}")
                 else:
                     # It's already a dictionary
                     formatted_requirements.append(req)
