@@ -285,6 +285,35 @@ def export_missing_modules_report(format: str = "csv", db: Session = Depends(get
     """Export missing modules report (CSV or Excel)"""
     return DataLoaderService.export_missing_modules_report(db, format)
 
+# ============================================================================
+# GRADUATION ANALYSIS ENDPOINTS
+# ============================================================================
+
+@app.get("/api/graduation-analysis")
+def get_graduation_analysis(
+    campus: Optional[str] = None,
+    plan_code: Optional[str] = None,
+    academic_level: Optional[str] = None,
+    limit: int = 100,
+    offset: int = 0,
+    db: Session = Depends(get_db)
+):
+    """Get potential graduates - students with no missing modules who are registered for final modules"""
+    try:
+        from app.services import get_graduation_analysis
+        return get_graduation_analysis(db, campus, plan_code, academic_level, limit, offset)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error in graduation analysis: {str(e)}")
+
+@app.get("/api/graduation-stats")
+def get_graduation_statistics(db: Session = Depends(get_db)):
+    """Get graduation statistics and summary"""
+    try:
+        from app.services import get_graduation_statistics
+        return get_graduation_statistics(db)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting graduation statistics: {str(e)}")
+
 @app.get("/api/debug/plan-modules/{plan_code}")
 def debug_plan_modules(plan_code: str, db: Session = Depends(get_db)):
     """Debug endpoint to check plan_modules data"""

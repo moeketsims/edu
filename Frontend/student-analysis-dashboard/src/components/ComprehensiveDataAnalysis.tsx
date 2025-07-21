@@ -28,6 +28,7 @@ import {
   ArrowLeft,
   ArrowRight
 } from 'lucide-react';
+import GraduationAnalysis from './GraduationAnalysis';
 
 // Enhanced types for enterprise-level data handling
 interface MissingModuleDetail {
@@ -84,6 +85,9 @@ const ComprehensiveDataAnalysis: React.FC<ComprehensiveDataAnalysisProps> = ({
   const [loading, setLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingStage, setLoadingStage] = useState('Initializing...');
+  
+  // Tab management
+  const [activeTab, setActiveTab] = useState<'analysis' | 'graduation'>('analysis');
   
   // Simplified filter state
   const [filterStats, setFilterStats] = useState<FilterStats>({
@@ -987,7 +991,42 @@ const ComprehensiveDataAnalysis: React.FC<ComprehensiveDataAnalysisProps> = ({
                       </div>
                       </div>
 
-          {/* Enterprise Data Table - Fixed Height Container */}
+          {/* Tab Navigation */}
+          <div className="bg-white border-b border-slate-200 px-6 py-2">
+            <div className="flex items-center space-x-1">
+              <button
+                onClick={() => setActiveTab('analysis')}
+                className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 flex items-center space-x-2 ${
+                  activeTab === 'analysis'
+                    ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                    : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50'
+                }`}
+              >
+                <BarChart3 className="w-4 h-4" />
+                <span>Student Analysis</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('graduation')}
+                className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 flex items-center space-x-2 ${
+                  activeTab === 'graduation'
+                    ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                    : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50'
+                }`}
+              >
+                <GraduationCap className="w-4 h-4" />
+                <span>Graduation Analysis</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Tab Content */}
+          {activeTab === 'graduation' ? (
+            <div className="flex-1 overflow-hidden">
+              <GraduationAnalysis />
+            </div>
+          ) : (
+            <>
+              {/* Enterprise Data Table - Fixed Height Container */}
           <div className="flex-1 bg-white flex flex-col min-h-0">
             {/* Table Header - Fixed */}
             <div className="flex-shrink-0">
@@ -1477,6 +1516,8 @@ const ComprehensiveDataAnalysis: React.FC<ComprehensiveDataAnalysisProps> = ({
               </div>
             )}
           </div>
+            </>
+          )}
 
           {/* Missing Modules Info Modal */}
           {showMissingModuleInfo && (
