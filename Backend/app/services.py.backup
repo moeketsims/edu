@@ -725,12 +725,21 @@ class DataLoaderService:
             print("📁 Reading Excel file from 'UG RESULTS' sheet...")
             df = pd.read_excel(io.BytesIO(contents), sheet_name='UG RESULTS', engine='openpyxl', skiprows=3)
             
-            # Forward fill student information efficiently
-            print("🔄 Forward-filling student data...")
+            # Forward fill student information efficiently - auto-fill first columns
+            print("🔄 Forward-filling student data (auto-fill down)...")
             student_info_columns = ['STUDENT_NUMBER', 'NAME', 'YEAR', 'CAMPUS_NAME', 'PLAN_CODE', 'PLAN_DESCRIPTION']
+            
+            print(f"📋 Available columns in Excel: {list(df.columns)}")
+            
+            # Forward fill each student info column down through rows
             for col in student_info_columns:
                 if col in df.columns:
+                    print(f"   ⬇️  Auto-filling column: {col}")
                     df[col] = df[col].ffill()
+                else:
+                    print(f"   ⚠️  Missing column: {col}")
+            
+            print("✅ Auto-fill completed for student information columns")
             
             # Remove rows with no student number
             df = df.dropna(subset=['STUDENT_NUMBER'])

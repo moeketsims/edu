@@ -158,13 +158,17 @@ The application uses SQLite by default for simplicity. The database file (`stude
 
 ### Student Data (Excel)
 Must be in the "UG RESULTS" sheet of the Excel file.
-Expected columns:
-- STUDENT_NUMBER
-- NAME
-- YEAR
-- CAMPUS_NAME
-- PLAN_CODE
-- PLAN_DESCRIPTION
+
+#### Auto-Fill Columns (First 6 columns):
+These columns are automatically forward-filled down for each student's modules:
+- STUDENT_NUMBER (auto-filled down)
+- NAME (auto-filled down)
+- YEAR (auto-filled down)
+- CAMPUS_NAME (auto-filled down) 
+- PLAN_CODE (auto-filled down)
+- PLAN_DESCRIPTION (auto-filled down)
+
+#### Module-Specific Columns:
 - MODULE_CODE
 - MODULE_NAME
 - FINAL_MARK
@@ -174,6 +178,16 @@ Expected columns:
 - CRED_PASS_PLAN_All_years
 - CRED_PASS_PLAN_CUR_year
 - And other academic details...
+
+#### File Structure:
+```
+Row 1-3: Headers (skipped automatically)
+Row 4: Student1_Info, Module1_Info
+Row 5: [blank], Module2_Info    ← Student info auto-filled
+Row 6: [blank], Module3_Info    ← Student info auto-filled
+Row 7: Student2_Info, Module1_Info
+Row 8: [blank], Module2_Info    ← Student info auto-filled
+```
 
 ### Allocated Modules (CSV)
 Expected columns:
