@@ -1320,7 +1320,7 @@ class DataLoaderService:
                     module.final_mark_description != "---"):
                     passed_modules.add(module.module_code)
             
-            # Determine actual academic level based on CURRENT REGISTRATION and full course load
+            # Determine actual academic level based on CURRENT REGISTRATION and MODULE LEVELS
             current_academic_level = "1st"  # Default to 1st year
             
             # Get current year modules (latest calendar year)
@@ -1331,51 +1331,51 @@ class DataLoaderService:
                                   if module.year_taken == latest_calendar_year]
             current_registered_modules = set(module.module_code for module in current_year_modules)
             
-            # For each academic year, check if student has full course load currently registered
-            for year in ["4th", "3rd", "2nd", "1st"]:  # Check highest year first
-                required_for_year = set(requirements_by_year[year])
-                if not required_for_year:  # No requirements for this year
-                    continue
-                
-                # Check how much of this academic year is currently registered OR already passed
-                currently_registered_for_year = current_registered_modules.intersection(required_for_year)
-                already_passed_for_year = passed_modules.intersection(required_for_year)
-                total_covered_for_year = currently_registered_for_year.union(already_passed_for_year)
-                
-                coverage_rate = len(total_covered_for_year) / len(required_for_year) if required_for_year else 0
-                
-                # Student is at this academic level if they have 100% coverage (registered or passed)
-                if coverage_rate >= 1.0:  # 100% of year's modules covered (registered or passed)
-                    # Check if they have prerequisites (previous years substantially complete)
-                    can_be_at_level = True
-                    for prev_year in ["1st", "2nd", "3rd"]:
-                        if prev_year == year:
-                            break
-                        prev_required = set(requirements_by_year[prev_year])
-                        if prev_required:
-                            prev_completed = passed_modules.intersection(prev_required)
-                            prev_rate = len(prev_completed) / len(prev_required)
-                            if prev_rate < 0.7:  # Must have 70% of previous years complete
-                                can_be_at_level = False
-                                break
-                    
-                    if can_be_at_level:
-                        current_academic_level = year
-                        break  # Found current level based on 100% coverage
+            # IMPROVED ALGORITHM: Check what level of modules student is currently taking/has passed
+            # This handles students who advance despite missing prerequisites
             
-            # If no 100% full load found, fall back to completion-based logic
+            # Method 1: Check current registration first (most reliable indicator)
+            if current_registered_modules:
+                current_levels_detected = set()
+                for year, required_modules in requirements_by_year.items():
+                    if required_modules and current_registered_modules.intersection(set(required_modules)):
+                        current_levels_detected.add(year)
+                
+                if current_levels_detected:
+                    # Take the highest level they're currently registered for
+                    level_hierarchy = {"1st": 1, "2nd": 2, "3rd": 3, "4th": 4, "5th": 5, "6th": 6}
+                    highest_current = max(current_levels_detected, key=lambda x: level_hierarchy.get(x, 0))
+                    current_academic_level = highest_current
+            
+            # Method 2: If no current registration, check highest level of passed modules
+            if current_academic_level == "1st" and passed_modules:
+                passed_levels_detected = set()
+                for year, required_modules in requirements_by_year.items():
+                    if required_modules and passed_modules.intersection(set(required_modules)):
+                        passed_levels_detected.add(year)
+                
+                if passed_levels_detected:
+                    level_hierarchy = {"1st": 1, "2nd": 2, "3rd": 3, "4th": 4, "5th": 5, "6th": 6}
+                    highest_passed = max(passed_levels_detected, key=lambda x: level_hierarchy.get(x, 0))
+                    current_academic_level = highest_passed
+            
+            # Method 3: Fallback - check by completion rates (original logic as backup)
             if current_academic_level == "1st":
-                for year in ["1st", "2nd", "3rd", "4th"]:
+                for year in ["4th", "3rd", "2nd", "1st"]:  # Check highest year first
                     required_for_year = set(requirements_by_year[year])
-                    if not required_for_year:
+                    if not required_for_year:  # No requirements for this year
                         continue
                     
-                    # Check completion rate for fallback
-                    completed_for_year = passed_modules.intersection(required_for_year)
-                    completion_rate = len(completed_for_year) / len(required_for_year) if required_for_year else 0
+                    # Check how much of this academic year is currently registered OR already passed
+                    currently_registered_for_year = current_registered_modules.intersection(required_for_year)
+                    already_passed_for_year = passed_modules.intersection(required_for_year)
+                    total_covered_for_year = currently_registered_for_year.union(already_passed_for_year)
                     
-                    if completion_rate >= 0.8:
-                        # Check prerequisites
+                    coverage_rate = len(total_covered_for_year) / len(required_for_year) if required_for_year else 0
+                    
+                    # Student is at this academic level if they have 100% coverage (registered or passed)
+                    if coverage_rate >= 1.0:  # 100% of year's modules covered (registered or passed)
+                        # Check if they have prerequisites (previous years substantially complete)
                         can_be_at_level = True
                         for prev_year in ["1st", "2nd", "3rd"]:
                             if prev_year == year:
@@ -1384,14 +1384,48 @@ class DataLoaderService:
                             if prev_required:
                                 prev_completed = passed_modules.intersection(prev_required)
                                 prev_rate = len(prev_completed) / len(prev_required)
-                                if prev_rate < 0.7:
+                                if prev_rate < 0.7:  # Must have 70% of previous years complete
                                     can_be_at_level = False
                                     break
+                        
+                        if can_be_at_level:
+                            current_academic_level = year
+                            break  # Found current level based on 100% coverage
+                    
+                    # If no 100% full load found, fall back to completion-based logic
+                    if current_academic_level == "1st":
+                        # Determine available years based on plan type (extended programs support 5th/6th years)
+                        available_years = ["1st", "2nd", "3rd", "4th"]
+                        if plan_code and "E" in plan_code.upper():
+                            available_years.extend(["5th", "6th"])
+                        
+                        for year in available_years:
+                            required_for_year = set(requirements_by_year.get(year, set()))
+                            if not required_for_year:
+                                continue
                             
-                            if can_be_at_level:
-                                current_academic_level = year
-                            else:
-                                break  # Can't advance further due to incomplete prerequisites
+                            # Check completion rate for fallback
+                            completed_for_year = passed_modules.intersection(required_for_year)
+                            completion_rate = len(completed_for_year) / len(required_for_year) if required_for_year else 0
+                            
+                            if completion_rate >= 0.8:
+                                # Check prerequisites
+                                can_be_at_level = True
+                                for prev_year in ["1st", "2nd", "3rd", "4th"]:
+                                    if prev_year == year:
+                                        break
+                                    prev_required = set(requirements_by_year.get(prev_year, set()))
+                                    if prev_required:
+                                        prev_completed = passed_modules.intersection(prev_required)
+                                        prev_rate = len(prev_completed) / len(prev_required)
+                                        if prev_rate < 0.7:
+                                            can_be_at_level = False
+                                            break
+                                
+                                if can_be_at_level:
+                                    current_academic_level = year
+                                else:
+                                    break  # Can't advance further due to incomplete prerequisites
             
             # Analyze modules by year and track retakes
             modules_by_year = {}
@@ -2297,7 +2331,7 @@ class ReportService:
                     module.final_mark_description != "---"):
                     passed_modules.add(module.module_code)
             
-            # Determine actual academic level based on CURRENT REGISTRATION and full course load
+            # Determine actual academic level based on CURRENT REGISTRATION and MODULE LEVELS
             current_academic_level = "1st"  # Default to 1st year
             
             # Get current year modules (latest calendar year)
@@ -2308,72 +2342,101 @@ class ReportService:
                                   if module.year_taken == latest_calendar_year]
             current_registered_modules = set(module.module_code for module in current_year_modules)
             
-            # For each academic year, check if student has full course load currently registered
-            for year in ["4th", "3rd", "2nd", "1st"]:  # Check highest year first
-                required_for_year = set(requirements_by_year[year])
-                if not required_for_year:  # No requirements for this year
-                    continue
-                
-                # Check how much of this academic year is currently registered OR already passed
-                currently_registered_for_year = current_registered_modules.intersection(required_for_year)
-                already_passed_for_year = passed_modules.intersection(required_for_year)
-                total_covered_for_year = currently_registered_for_year.union(already_passed_for_year)
-                
-                coverage_rate = len(total_covered_for_year) / len(required_for_year) if required_for_year else 0
-                
-                # Student is at this academic level if they have 100% coverage (registered or passed)
-                if coverage_rate >= 1.0:  # 100% of year's modules covered (registered or passed)
-                    # Check if they have prerequisites (previous years substantially complete)
-                    can_be_at_level = True
-                    for prev_year in ["1st", "2nd", "3rd"]:
-                        if prev_year == year:
-                            break
-                        prev_required = set(requirements_by_year[prev_year])
-                        if prev_required:
-                            prev_completed = passed_modules.intersection(prev_required)
-                            prev_rate = len(prev_completed) / len(prev_required)
-                            if prev_rate < 0.7:  # Must have 70% of previous years complete
-                                can_be_at_level = False
-                                break
-                    
-                    if can_be_at_level:
-                        current_academic_level = year
-                        break  # Found current level based on 100% coverage
+            # IMPROVED ALGORITHM: Check what level of modules student is currently taking/has passed
+            # This handles students who advance despite missing prerequisites
             
-            # If no 100% full load found, fall back to completion-based logic
-            if current_academic_level == "1st":
-                # Determine available years based on plan type (extended programs support 5th/6th years)
-                available_years = ["1st", "2nd", "3rd", "4th"]
-                if plan_code and "E" in plan_code.upper():
-                    available_years.extend(["5th", "6th"])
+            # Method 1: Check current registration first (most reliable indicator)
+            if current_registered_modules:
+                current_levels_detected = set()
+                for year, required_modules in requirements_by_year.items():
+                    if required_modules and current_registered_modules.intersection(set(required_modules)):
+                        current_levels_detected.add(year)
                 
-                for year in available_years:
-                    required_for_year = set(requirements_by_year.get(year, set()))
-                    if not required_for_year:
+                if current_levels_detected:
+                    # Take the highest level they're currently registered for
+                    level_hierarchy = {"1st": 1, "2nd": 2, "3rd": 3, "4th": 4, "5th": 5, "6th": 6}
+                    highest_current = max(current_levels_detected, key=lambda x: level_hierarchy.get(x, 0))
+                    current_academic_level = highest_current
+            
+            # Method 2: If no current registration, check highest level of passed modules
+            if current_academic_level == "1st" and passed_modules:
+                passed_levels_detected = set()
+                for year, required_modules in requirements_by_year.items():
+                    if required_modules and passed_modules.intersection(set(required_modules)):
+                        passed_levels_detected.add(year)
+                
+                if passed_levels_detected:
+                    level_hierarchy = {"1st": 1, "2nd": 2, "3rd": 3, "4th": 4, "5th": 5, "6th": 6}
+                    highest_passed = max(passed_levels_detected, key=lambda x: level_hierarchy.get(x, 0))
+                    current_academic_level = highest_passed
+            
+            # Method 3: Fallback - check by completion rates (original logic as backup)
+            if current_academic_level == "1st":
+                for year in ["4th", "3rd", "2nd", "1st"]:  # Check highest year first
+                    required_for_year = set(requirements_by_year[year])
+                    if not required_for_year:  # No requirements for this year
                         continue
                     
-                    # Check completion rate for fallback
-                    completed_for_year = passed_modules.intersection(required_for_year)
-                    completion_rate = len(completed_for_year) / len(required_for_year) if required_for_year else 0
+                    # Check how much of this academic year is currently registered OR already passed
+                    currently_registered_for_year = current_registered_modules.intersection(required_for_year)
+                    already_passed_for_year = passed_modules.intersection(required_for_year)
+                    total_covered_for_year = currently_registered_for_year.union(already_passed_for_year)
                     
-                    if completion_rate >= 0.8:
-                        # Check prerequisites
+                    coverage_rate = len(total_covered_for_year) / len(required_for_year) if required_for_year else 0
+                    
+                    # Student is at this academic level if they have 100% coverage (registered or passed)
+                    if coverage_rate >= 1.0:  # 100% of year's modules covered (registered or passed)
+                        # Check if they have prerequisites (previous years substantially complete)
                         can_be_at_level = True
-                        for prev_year in ["1st", "2nd", "3rd", "4th"]:
+                        for prev_year in ["1st", "2nd", "3rd"]:
                             if prev_year == year:
                                 break
-                            prev_required = set(requirements_by_year.get(prev_year, set()))
+                            prev_required = set(requirements_by_year[prev_year])
                             if prev_required:
                                 prev_completed = passed_modules.intersection(prev_required)
                                 prev_rate = len(prev_completed) / len(prev_required)
-                                if prev_rate < 0.7:
+                                if prev_rate < 0.7:  # Must have 70% of previous years complete
                                     can_be_at_level = False
                                     break
                         
                         if can_be_at_level:
                             current_academic_level = year
-                        else:
-                            break  # Can't advance further due to incomplete prerequisites
+                            break  # Found current level based on 100% coverage
+                    
+                    # If no 100% full load found, fall back to completion-based logic
+                    if current_academic_level == "1st":
+                        # Determine available years based on plan type (extended programs support 5th/6th years)
+                        available_years = ["1st", "2nd", "3rd", "4th"]
+                        if plan_code and "E" in plan_code.upper():
+                            available_years.extend(["5th", "6th"])
+                        
+                        for year in available_years:
+                            required_for_year = set(requirements_by_year.get(year, set()))
+                            if not required_for_year:
+                                continue
+                            
+                            # Check completion rate for fallback
+                            completed_for_year = passed_modules.intersection(required_for_year)
+                            completion_rate = len(completed_for_year) / len(required_for_year) if required_for_year else 0
+                            
+                            if completion_rate >= 0.8:
+                                # Check prerequisites
+                                can_be_at_level = True
+                                for prev_year in ["1st", "2nd", "3rd", "4th"]:
+                                    if prev_year == year:
+                                        break
+                                    prev_required = set(requirements_by_year.get(prev_year, set()))
+                                    if prev_required:
+                                        prev_completed = passed_modules.intersection(prev_required)
+                                        prev_rate = len(prev_completed) / len(prev_required)
+                                        if prev_rate < 0.7:
+                                            can_be_at_level = False
+                                            break
+                                
+                                if can_be_at_level:
+                                    current_academic_level = year
+                                else:
+                                    break  # Can't advance further due to incomplete prerequisites
             
             # Analyze modules by year and track retakes
             modules_by_year = {}
@@ -2910,7 +2973,7 @@ class ReportService:
                             if has_passed:
                                 retake_count += 1
                     
-                    # Determine academic level (FIXED: Registration-based algorithm)
+                    # Determine academic level (IMPROVED: Registration-based algorithm)
                     requirements = requirements_by_plan_year[plan]
                     academic_level = "1st"  # Default
                     
@@ -2929,8 +2992,20 @@ class ReportService:
                             highest_current_level = max(current_levels, key=lambda x: level_hierarchy.get(x, 0))
                             academic_level = highest_current_level
                     
-                    # Method 2: Fallback - progression-based calculation
+                    # Method 2: If no current registration, check highest level of passed modules
                     if academic_level == "1st" and passed_modules:
+                        passed_levels_detected = set()
+                        for level, required_modules in requirements.items():
+                            if required_modules and passed_modules.intersection(required_modules):
+                                passed_levels_detected.add(level)
+                        
+                        if passed_levels_detected:
+                            level_hierarchy = {"1st": 1, "2nd": 2, "3rd": 3, "4th": 4, "5th": 5, "6th": 6}
+                            highest_passed = max(passed_levels_detected, key=lambda x: level_hierarchy.get(x, 0))
+                            academic_level = highest_passed
+                    
+                    # Method 3: Fallback - progression-based calculation
+                    if academic_level == "1st":
                         is_extended = "E" in plan.upper()
                         available_levels = ["1st", "2nd", "3rd", "4th", "5th", "6th"] if is_extended else ["1st", "2nd", "3rd", "4th"]
                         
