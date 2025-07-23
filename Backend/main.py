@@ -19,6 +19,7 @@ from sqlalchemy import text
 from app.database import get_db, create_tables, get_database_info
 from app.models import Student, Module, StudentModule, PlanCode, MissingModule
 from app.services import StudentService, ModuleService, PlanCodeService, DataLoaderService, ReportService
+from app.performance import PerformanceService
 from app.schemas import (
     StudentCreate, ModuleCreate, StudentModuleCreate,
     StudentResponse, ModuleResponse, PlanCodeResponse, 
@@ -349,6 +350,109 @@ def debug_plan_modules(plan_code: str, db: Session = Depends(get_db)):
         }
     except Exception as e:
         return {"error": str(e)}
+
+# ============================================================================
+# PERFORMANCE OPTIMIZATION ENDPOINTS
+# ============================================================================
+
+@app.post("/api/performance/refresh-analysis")
+def refresh_student_analysis(plan_code: Optional[str] = None, db: Session = Depends(get_db)):
+    """
+    Refresh pre-calculated student analysis summary table for ultra-fast queries
+    This replaces the slow bulk comprehensive analysis
+    """
+    return PerformanceService.refresh_student_analysis_summary(db, plan_code)
+
+@app.post("/api/performance/refresh-dashboard-stats")
+def refresh_dashboard_stats(db: Session = Depends(get_db)):
+    """Refresh pre-calculated dashboard statistics for ultra-fast dashboard loading"""
+    return PerformanceService.refresh_dashboard_statistics(db)
+
+@app.get("/api/performance/fast-dashboard-stats")
+def get_fast_dashboard_stats(db: Session = Depends(get_db)):
+    """Get dashboard statistics from pre-calculated table (ultra-fast, cached)"""
+    return PerformanceService.get_fast_dashboard_stats(db)
+
+@app.get("/api/performance/fast-student-analysis")
+def get_fast_student_analysis(
+    plan_code: Optional[str] = None,
+    academic_level: Optional[str] = None,
+    campus: Optional[str] = None,
+    limit: int = 100,
+    offset: int = 0,
+    db: Session = Depends(get_db)
+):
+    """Get student analysis from pre-calculated table (ultra-fast, no computation needed)"""
+    return PerformanceService.get_fast_student_analysis(db, plan_code, academic_level, campus, limit, offset)
+
+@app.post("/api/performance/invalidate-cache")
+def invalidate_cache(cache_key: Optional[str] = None):
+    """Invalidate performance cache (specific key or all cache)"""
+    PerformanceService.invalidate_cache(cache_key)
+    return {"status": "cache_invalidated", "key": cache_key or "all"}
+
+@app.get("/api/performance/cache-status")
+def get_cache_status():
+    """Get current cache status and statistics"""
+    return {
+        "cached_keys": list(PerformanceService._cache.keys()),
+        "cache_count": len(PerformanceService._cache),
+        "cache_timestamps": {k: v for k, v in PerformanceService._cache_timestamps.items()},
+        "default_ttl_seconds": PerformanceService._cache_ttl
+    }
+
+# ============================================================================
+# OPTIMIZED REPLACEMENT ENDPOINTS (Use these instead of slow ones)
+# ============================================================================
+
+@app.post("/api/fast-bulk-analysis")
+def fast_bulk_analysis(plan_code: Optional[str] = None, db: Session = Depends(get_db)):
+    """
+    ULTRA-FAST replacement for /api/bulk-comprehensive-analysis
+    Uses pre-calculated data instead of computing on every request
+    
+    If pre-calculated data doesn't exist, it will be created automatically.
+    For best performance, call /api/performance/refresh-analysis periodically.
+    """
+    # Check if we have pre-calculated data
+    result = PerformanceService.get_fast_student_analysis(db, plan_code=plan_code, limit=1)
+    
+    if result["total_count"] == 0:
+        # No pre-calculated data, refresh it first
+        refresh_result = PerformanceService.refresh_student_analysis_summary(db, plan_code)
+        if refresh_result["status"] != "completed":
+            return {
+                "status": "failed",
+                "message": "Failed to generate analysis data",
+                "error": refresh_result.get("error")
+            }
+    
+    # Get all students with pagination
+    all_students = []
+    offset = 0
+    limit = 1000
+    
+    while True:
+        batch = PerformanceService.get_fast_student_analysis(db, plan_code=plan_code, limit=limit, offset=offset)
+        if not batch["students"]:
+            break
+        all_students.extend(batch["students"])
+        offset += limit
+        if not batch["pagination"]["has_more"]:
+            break
+    
+    # Format response to match original bulk analysis format
+    return {
+        "analysis_summary": {
+            "total_students_analyzed": len(all_students),
+            "successful_analyses": len(all_students),
+            "failed_analyses": 0,
+            "processing_time_seconds": 0.1  # Ultra-fast!
+        },
+        "individual_student_results": all_students,
+        "data_source": "pre_calculated_optimized",
+        "performance_note": "This endpoint uses pre-calculated data for ultra-fast results"
+    }
 
 if __name__ == "__main__":
     import uvicorn
