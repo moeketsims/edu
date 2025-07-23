@@ -157,6 +157,7 @@ The application uses SQLite by default for simplicity. The database file (`stude
 ## Data Format Requirements
 
 ### Student Data (Excel)
+Must be in the "UG RESULTS" sheet of the Excel file.
 Expected columns:
 - STUDENT_NUMBER
 - NAME
@@ -168,6 +169,10 @@ Expected columns:
 - MODULE_NAME
 - FINAL_MARK
 - FINAL_MARK_DESCRIPTION
+- TOTAL_CREDIT_HEMIS
+- UNITS_MAXIMUM
+- CRED_PASS_PLAN_All_years
+- CRED_PASS_PLAN_CUR_year
 - And other academic details...
 
 ### Allocated Modules (CSV)

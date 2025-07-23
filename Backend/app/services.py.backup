@@ -720,10 +720,10 @@ class DataLoaderService:
         try:
             print("🚀 Starting ultra-fast PostgreSQL data loading...")
             
-            # Read Excel file
+            # Read Excel file - specifically the "UG RESULTS" sheet
             contents = await file.read()
-            print("📁 Reading Excel file...")
-            df = pd.read_excel(io.BytesIO(contents), engine='openpyxl', skiprows=3)
+            print("📁 Reading Excel file from 'UG RESULTS' sheet...")
+            df = pd.read_excel(io.BytesIO(contents), sheet_name='UG RESULTS', engine='openpyxl', skiprows=3)
             
             # Forward fill student information efficiently
             print("🔄 Forward-filling student data...")
