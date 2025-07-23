@@ -2910,51 +2910,44 @@ class ReportService:
                             if has_passed:
                                 retake_count += 1
                     
-                    # Determine academic level (100% full load logic)
+                    # Determine academic level (FIXED: Registration-based algorithm)
                     requirements = requirements_by_plan_year[plan]
-                    academic_level = "1st"
+                    academic_level = "1st"  # Default
                     
-                    # Check levels dynamically based on programme type
-                    is_extended = "E" in plan.upper()
-                    available_levels = ["6th", "5th", "4th", "3rd", "2nd", "1st"] if is_extended else ["4th", "3rd", "2nd", "1st"]
-                    
-                    for level in available_levels:
-                        required = requirements[level]
-                        if not required:
-                            continue
+                    # Method 1: Check based on current year registration (most reliable)
+                    # If student is currently registered for modules from a specific year, they're at that level
+                    if current_registered:
+                        # Check what academic levels the current modules belong to
+                        current_levels = set()
+                        for level, required_modules in requirements.items():
+                            if current_registered.intersection(required_modules):
+                                current_levels.add(level)
                         
-                        registered_for_level = current_registered.intersection(required)
-                        passed_for_level = passed_modules.intersection(required)
-                        total_coverage = registered_for_level.union(passed_for_level)
-                        
-                        coverage_rate = len(total_coverage) / len(required) if required else 0
-                        
-                        if coverage_rate >= 1.0:  # 100% coverage
-                            # Check prerequisites
-                            can_be_at_level = True
+                        # Take the highest level they're currently registered for
+                        if current_levels:
                             level_hierarchy = {"1st": 1, "2nd": 2, "3rd": 3, "4th": 4, "5th": 5, "6th": 6}
-                            current_level_num = level_hierarchy[level]
+                            highest_current_level = max(current_levels, key=lambda x: level_hierarchy.get(x, 0))
+                            academic_level = highest_current_level
+                    
+                    # Method 2: Fallback - progression-based calculation
+                    if academic_level == "1st" and passed_modules:
+                        is_extended = "E" in plan.upper()
+                        available_levels = ["1st", "2nd", "3rd", "4th", "5th", "6th"] if is_extended else ["1st", "2nd", "3rd", "4th"]
+                        
+                        for level in available_levels:
+                            required = requirements[level]
+                            if not required:
+                                continue
                             
-                            # Check completion of previous levels (up to max available level)
-                            max_prev_level = 5 if is_extended else 3
-                            prev_levels = ["1st", "2nd", "3rd", "4th", "5th"][:max_prev_level]
+                            # Check completion rate for this level
+                            completed_for_level = passed_modules.intersection(required)
+                            completion_rate = len(completed_for_level) / len(required) if required else 0
                             
-                            for prev_level in prev_levels:
-                                prev_level_num = level_hierarchy[prev_level]
-                                if prev_level_num >= current_level_num:
-                                    break
-                                
-                                prev_required = requirements[prev_level]
-                                if prev_required:
-                                    prev_completed = passed_modules.intersection(prev_required)
-                                    prev_rate = len(prev_completed) / len(prev_required)
-                                    if prev_rate < 0.7:
-                                        can_be_at_level = False
-                                        break
-                            
-                            if can_be_at_level:
+                            # If 80%+ complete, they can advance to next level
+                            if completion_rate >= 0.8:
                                 academic_level = level
-                                break
+                            else:
+                                break  # Stop at first incomplete level
                     
                     # Calculate missing modules (only up to current academic level)
                     level_hierarchy = {"1st": 1, "2nd": 2, "3rd": 3, "4th": 4, "5th": 5, "6th": 6}
@@ -2964,10 +2957,17 @@ class ReportService:
                     is_extended = "E" in plan.upper()
                     max_level = 6 if is_extended else 4
                     
-                    # Debug: Track which levels we're checking for this student
-                    if processed_so_far < 3:  # Only for first few students
-                        print(f"🎯 DEBUG Student {student_num}: Academic level = {academic_level} (level {current_level_num})")
-                        print(f"   Will check missing modules for levels: {[level for level, req_set in requirements.items() if level_hierarchy.get(level, 0) <= current_level_num]}")
+                    # Debug: Track academic level calculation for specific students
+                    if student_num in ["2012166670", "2028931612", "2028932867"] or processed_so_far < 3:
+                        print(f"🎯 DEBUG Student {student_num}: Academic level = {academic_level}")
+                        print(f"   Current registered: {current_registered}")
+                        print(f"   Passed modules: {len(passed_modules)} modules")
+                        if current_registered:
+                            for level, req_modules in requirements.items():
+                                overlap = current_registered.intersection(req_modules)
+                                if overlap:
+                                    print(f"   Currently taking {level} modules: {overlap}")
+                        print(f"   Will check missing modules for levels up to: {academic_level}")
                     
                     missing_modules = []
                     for level, required_set in requirements.items():
