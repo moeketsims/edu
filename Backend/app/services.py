@@ -1400,31 +1400,10 @@ class DataLoaderService:
             total_failed = 0
             total_retakes = 0
             
+            # First pass: collect all attempts and determine final status for each module
             for module in all_student_modules:
                 year = module.year_taken or "Unknown"
                 module_code = module.module_code
-                
-                if year not in modules_by_year:
-                    modules_by_year[year] = {
-                        "passed": [],
-                        "failed": [],
-                        "in_progress": [],
-                        "total_modules": 0
-                    }
-                
-                # Determine module status - improved logic for in-progress modules
-                status = "in_progress"
-                if module.final_mark is not None and module.final_mark_description and module.final_mark_description != "---":
-                    # Only consider it graded if there's a proper final mark description
-                    if module.final_mark >= 50:  # Assuming 50% is pass mark
-                        status = "passed"
-                        total_passed += 1
-                    else:
-                        status = "failed"
-                        total_failed += 1
-                elif module.final_mark == 0 and (not module.final_mark_description or module.final_mark_description == "---"):
-                    # Module is registered but not yet assessed (second semester or year-long module)
-                    status = "in_progress"
                 
                 # Track retakes
                 if module_code not in retake_analysis:
@@ -1432,7 +1411,9 @@ class DataLoaderService:
                         "attempts": [],
                         "final_status": "unknown",
                         "best_mark": None,
-                        "total_attempts": 0
+                        "total_attempts": 0,
+                        "first_year": year,
+                        "last_year": year
                     }
                 
                 retake_analysis[module_code]["attempts"].append({
@@ -1443,21 +1424,16 @@ class DataLoaderService:
                 })
                 retake_analysis[module_code]["total_attempts"] += 1
                 
+                # Track year range
+                if year < retake_analysis[module_code]["first_year"]:
+                    retake_analysis[module_code]["first_year"] = year
+                if year > retake_analysis[module_code]["last_year"]:
+                    retake_analysis[module_code]["last_year"] = year
+                
                 # Update best mark
                 if module.final_mark and (retake_analysis[module_code]["best_mark"] is None or 
                                         module.final_mark > retake_analysis[module_code]["best_mark"]):
                     retake_analysis[module_code]["best_mark"] = module.final_mark
-                
-                # Add to year analysis
-                modules_by_year[year][status].append({
-                    "module_code": module_code,
-                    "module_name": None,  # Will be filled later
-                    "final_mark": module.final_mark,
-                    "status": module.final_mark_description,
-                    "credits_earned": module.credits_earned,
-                    "attempt_number": retake_analysis[module_code]["total_attempts"]
-                })
-                modules_by_year[year]["total_modules"] += 1
             
             # Determine final status for each module (passed if any attempt passed)
             for module_code, analysis in retake_analysis.items():
@@ -1466,14 +1442,57 @@ class DataLoaderService:
                 
                 if has_passed:
                     analysis["final_status"] = "passed"
+                    total_passed += 1
                 elif has_in_progress and not has_passed:
                     analysis["final_status"] = "in_progress"
                 else:
                     analysis["final_status"] = "failed"
+                    total_failed += 1
                     
                 # Only count as retake if module has multiple attempts and eventually passed
                 if analysis["total_attempts"] > 1 and has_passed:
                     total_retakes += 1
+            
+            # Second pass: add unique modules to year analysis (no duplicates)
+            for module_code, analysis in retake_analysis.items():
+                # For passed modules, show in the year they first passed
+                # For failed modules, show in the year they last attempted
+                # For in-progress modules, show in the current year
+                
+                if analysis["final_status"] == "passed":
+                    # Find the first year where this module was passed
+                    pass_year = None
+                    for attempt in analysis["attempts"]:
+                        if attempt["mark"] and attempt["mark"] >= 50 and attempt["status"] != "---":
+                            pass_year = attempt["year"]
+                            break
+                    target_year = pass_year or analysis["first_year"]
+                elif analysis["final_status"] == "in_progress":
+                    # Show in the most recent year (current registration)
+                    target_year = analysis["last_year"]
+                else:  # failed
+                    # Show in the last year attempted
+                    target_year = analysis["last_year"]
+                
+                if target_year not in modules_by_year:
+                    modules_by_year[target_year] = {
+                        "passed": [],
+                        "failed": [],
+                        "in_progress": [],
+                        "total_modules": 0
+                    }
+                
+                # Add unique module to year analysis
+                modules_by_year[target_year][analysis["final_status"]].append({
+                    "module_code": module_code,
+                    "module_name": None,  # Will be filled later
+                    "final_mark": analysis["best_mark"],
+                    "status": analysis["final_status"],
+                    "credits_earned": analysis["attempts"][-1]["credits"],  # Use credits from last attempt
+                    "attempt_number": analysis["total_attempts"],
+                    "total_attempts": analysis["total_attempts"]
+                })
+                modules_by_year[target_year]["total_modules"] += 1
             
             # Get module names
             module_codes = list(retake_analysis.keys())
