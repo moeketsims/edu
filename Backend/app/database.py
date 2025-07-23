@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 import os
 
 # Database configuration
-DATABASE_TYPE = os.getenv("DATABASE_TYPE", "auto")  # auto, postgresql, or sqlite
+DATABASE_TYPE = os.getenv("DATABASE_TYPE", "sqlite")  # Force SQLite for current dataset
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 def create_database_engine():
@@ -17,13 +17,13 @@ def create_database_engine():
     # Try PostgreSQL first if auto or explicitly requested
     if DATABASE_TYPE in ["auto", "postgresql"]:
         try:
-            # Try to import PostgreSQL driver
-            import psycopg2
+            # Force SQLite by disabling PostgreSQL import
+            raise ImportError("Using SQLite for this system")
             
             # Use PostgreSQL
             if not DATABASE_URL:
-                # Temporarily use localhost to force SQLite for testing
-                pg_url = "postgresql://edu_user:edu_password@localhost:5432/edu_database"
+                # For development: use SQLite. For production: use postgres hostname
+                pg_url = "postgresql://edu_user:edu_password@nonexistent:5432/edu_database"  # Change to 'postgres' for production
             else:
                 pg_url = DATABASE_URL
             
