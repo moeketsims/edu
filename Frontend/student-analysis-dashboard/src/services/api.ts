@@ -176,6 +176,7 @@ export const studentAnalysisAPI = {
     if (filters.plan_code) params.append('plan_code', filters.plan_code);
     if (filters.has_missing_modules !== undefined) params.append('has_missing_modules', filters.has_missing_modules.toString());
     if (filters.completion_range) params.append('completion_range', filters.completion_range);
+    if (filters.include_extended !== undefined) params.append('include_extended', filters.include_extended.toString());
     params.append('limit', filters.limit.toString());
     params.append('offset', filters.offset.toString());
 

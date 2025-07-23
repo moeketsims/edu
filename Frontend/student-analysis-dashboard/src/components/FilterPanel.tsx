@@ -20,7 +20,8 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
     filters.academic_level || 
     filters.plan_code || 
     filters.has_missing_modules !== undefined || 
-    filters.completion_range
+    filters.completion_range ||
+    filters.include_extended !== undefined
   );
 
   return (
@@ -82,13 +83,18 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                 Completion: {filters.completion_range}
               </span>
             )}
+            {filters.include_extended !== undefined && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                {filters.include_extended ? 'Extended Programmes Only' : 'Regular Programmes Only'}
+              </span>
+            )}
           </motion.div>
         )}
       </div>
 
       {/* Filter controls */}
       <div className="p-6 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           {/* Academic Level Filter */}
           <div className="space-y-3">
             <label className="block text-sm font-medium text-gray-300">
@@ -204,6 +210,42 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                 <option value="26-50%">26-50%</option>
                 <option value="51-75%">51-75%</option>
                 <option value="76-100%">76-100%</option>
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          {/* Extended Programme Filter */}
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-gray-300">
+              Programme Type
+            </label>
+            <div className="relative">
+              <select
+                value={
+                  filters.include_extended === undefined
+                    ? ''
+                    : filters.include_extended
+                    ? 'true'
+                    : 'false'
+                }
+                onChange={(e) =>
+                  onFilterChange({
+                    include_extended:
+                      e.target.value === ''
+                        ? undefined
+                        : e.target.value === 'true'
+                  })
+                }
+                className="w-full px-4 py-3 bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 appearance-none cursor-pointer hover:bg-gray-800/70"
+              >
+                <option value="">All Programmes</option>
+                <option value="false">Regular Only</option>
+                <option value="true">Extended Only</option>
               </select>
               <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                 <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

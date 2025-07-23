@@ -1,0 +1,415 @@
+/* -----------------------------------------------------------
+   General Styling
+----------------------------------------------------------- */
+
+/* General Body Styling */
+body {
+  background-color: #F4F4F9; /* Light corporate background */
+  font-family: 'Open Sans', sans-serif; /* Clean and modern font */
+  color: #2F2F2F; /* Neutral dark gray text for readability */
+}
+
+/* -----------------------------------------------------------
+   Header and Footer Styling
+----------------------------------------------------------- */
+
+/* Header Container */
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(to right, #007c69, #003366, #007c69);
+  padding: 15px 20px;
+  color: #FFFFFF;
+  border-bottom: 3px solid #D71920;
+  margin-bottom: 20px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Logo Styling */
+.logo-left,
+.logo-right {
+  height: 70px;
+  width: auto;
+}
+
+/* Dashboard Title Styling */
+.dashboard-title {
+  font-size: 28px;
+  font-weight: bold;
+  font-family: 'Merriweather', serif;
+  text-align: center;
+  flex: 1;
+  margin: 0;
+}
+
+/* Footer Styling */
+.footer {
+  background-color: #004B3B;
+  color: #FFFFFF;
+  text-align: center;
+  padding: 10px 0;
+  font-size: 14px;
+  border-top: 3px solid #007556;
+}
+
+/* -----------------------------------------------------------
+   Sidebar Styling
+----------------------------------------------------------- */
+
+/* Sidebar Styling */
+.sidebar {
+  background-color: #056e58;
+  color: #FFFFFF;
+  padding: 1px;
+  border-right: 3px solid #007556;
+  min-height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebar h4 {
+  font-weight: bold;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  border-bottom: 2px solid #007556;
+  padding-bottom: 2px;
+}
+
+/* Sidebar Input Styling */
+.sidebar .form-control {
+  background-color: #F4F4F9;
+  color: #004B3B;
+  border: 1px solid #007556;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+.sidebar .form-control::placeholder {
+  color: #CCCCCC;
+}
+
+.sidebar .form-control:hover {
+  border-color: #007556;
+}
+
+.sidebar input:focus,
+.sidebar select:focus {
+  outline: none;
+  border-color: #D71920; /* UFS Red for focus */
+  box-shadow: 0 0 5px #D71920;
+}
+
+/* Sidebar Button Styling */
+.sidebar .btn {
+  background-color: #007556;
+  color: #FFFFFF;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  text-transform: uppercase;
+  width: 100%;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar .btn:hover {
+  background-color: #005F30;
+  color: #FFFFFF;
+  transition: all 0.3s ease;
+}
+
+/* -----------------------------------------------------------
+   Input Group Styling
+----------------------------------------------------------- */
+
+.input-group {
+  margin-bottom: 10px;
+  padding: 5px;
+  background-color: #F4F4F9;
+  border: 2px solid #007556;
+  border-radius: 12px;
+  box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.1);
+}
+
+.input-group label {
+  font-weight: bold;
+  margin-bottom: 10px;
+  display: block;
+  color: #004B3B;
+}
+
+.input-group select,
+.input-group input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #004B3B;
+  border-radius: 8px;
+  background-color: #FFFFFF;
+}
+
+.input-group select:focus,
+.input-group input:focus {
+  border-color: #D71920;
+  box-shadow: 0 0 10px #D71920;
+}
+
+/* -----------------------------------------------------------
+   Value Box and Card Styling
+----------------------------------------------------------- */
+
+/* Value Box Styling */
+.value-box {
+  background-color: #004B3B;
+  color: #FFFFFF;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 10px;
+  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+
+.value-box:hover {
+  background-color: #007556;
+}
+
+/* Card Styling */
+.card {
+  border: 1px solid #007556;
+  background-color: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+/* Card Header Styling */
+.card-header {
+  background-color: #007556;
+  color: #FFFFFF;
+  font-weight: bold;
+  padding: 15px;
+  text-align: center;
+  border-radius: 5px 5px 0 0;
+  font-size: 20px;
+}
+
+/* -----------------------------------------------------------
+   DataTable Styling
+----------------------------------------------------------- */
+
+/* DataTable Container */
+.dataTables_wrapper {
+  font-family: 'Open Sans', sans-serif;
+  color: #2F2F2F;
+}
+
+/* Table Styling */
+table.dataTable {
+  background-color: #FFFFFF;
+  border: 1px solid #CCCCCC;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+/* Header Styling */
+table.dataTable thead th {
+  background-color: #007556;
+  color: #FFFFFF;
+  border-bottom: none;
+}
+
+/* Cell Padding */
+table.dataTable td,
+table.dataTable th {
+  padding: 12px;
+}
+
+/* Row Styling */
+table.dataTable tbody tr:nth-child(even) {
+  background-color: #F9F9F9;
+}
+
+table.dataTable tbody tr:hover {
+  background-color: #E8F5E9;
+}
+
+/* Conditional Row Styling */
+table.dataTable tbody tr.fail {
+  background-color: #F8D7DA;
+  color: #842029;
+}
+
+table.dataTable tbody tr.pass {
+  background-color: #DFF7DF;
+  color: #007556;
+}
+
+/* Pagination and Search Input Styling */
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+  background-color: #FFFFFF;
+  color: #007556;
+  border: 1px solid #CCCCCC;
+  border-radius: 5px;
+  padding: 5px 10px;
+  margin-left: 2px;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+  background-color: #E8F5E9;
+  color: #007556;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+  background-color: #007556;
+  color: #FFFFFF;
+}
+
+.dataTables_wrapper .dataTables_filter input {
+  background-color: #F4F4F9;
+  color: #2F2F2F;
+  border: 1px solid #007556;
+  border-radius: 5px;
+  padding: 5px;
+}
+
+.dataTables_wrapper .dataTables_filter label {
+  color: #2F2F2F;
+}
+
+.dataTables_wrapper .dataTables_length select {
+  background-color: #F4F4F9;
+  color: #2F2F2F;
+  border: 1px solid #007556;
+  border-radius: 5px;
+  padding: 5px;
+}
+
+.dataTables_wrapper .dataTables_info {
+  color: #2F2F2F;
+}
+
+/* -----------------------------------------------------------
+   DataTable Buttons Styling
+----------------------------------------------------------- */
+
+/* Buttons Container */
+.dataTables_wrapper .dt-buttons {
+  background-color: #007556; /* Faculty Green Background */
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+/* Buttons Styling */
+.dataTables_wrapper .dt-buttons .dt-button {
+  background-color: #007556; /* Faculty Green Background */
+  color: #FFFFFF;
+  border: none;
+  border-radius: 5px;
+  padding: 6px 12px;
+  margin-right: 5px;
+  font-size: 14px;
+  box-shadow: none;
+}
+
+/* Hover effect for buttons */
+.dataTables_wrapper .dt-buttons .dt-button:hover {
+  background-color: #005F30;
+  color: #FFFFFF;
+}
+
+/* Active state for buttons */
+.dataTables_wrapper .dt-buttons .dt-button:active {
+  background-color: #004B3B;
+  color: #FFFFFF;
+}
+
+/* -----------------------------------------------------------
+   ECharts Styling
+----------------------------------------------------------- */
+
+/* Chart Container Styling */
+.echarts4r {
+  padding: 20px;
+  background-color: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* -----------------------------------------------------------
+   Additional Styling
+----------------------------------------------------------- */
+
+/* Center Title Styling */
+.page-center-title {
+  text-align: center;
+  font-size: 36px;
+  font-weight: 700;
+  color: #004B3B;
+  margin-top: 20px;
+  margin-bottom: 30px;
+}
+
+/* Hover Effects */
+.value-box:hover {
+  background-color: #007556;
+  color: #FFFFFF;
+  transition: all 0.3s ease;
+}
+
+
+
+
+
+/* General Panel Styling */
+.panel {
+  margin-bottom: 20px;
+  border: 1px solid #003366; /* Dark Blue Border */
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Panel Heading Styling */
+.panel-heading {
+  background-color: linear-gradient(to right, #007c69, #003366, #007c69); /* Dark Blue Background */
+  color: #FFFFFF; /* White Text */
+  font-size: 18px;
+  font-weight: bold;
+  padding: 10px;
+  text-align: center;
+  border-bottom: 3px solid #D71920; /* Gold Bottom Border */
+}
+
+/* Panel Body Styling */
+.panel-body {
+  padding: 15px;
+  background-color: #FFFFFF; /* White Background */
+}
+
+/* Chart Borders */
+.echarts4r-output {
+  border: 1px solid #E5E5E5; /* Light Grey Border */
+  border-radius: 10px;
+}
+
+/* Headings for Titles */
+h3 {
+  color: #003366; /* Dark Blue */
+  font-weight: bold;
+  margin-top: 0;
+}
+
+/* Tooltip Styling */
+.tooltip {
+  background-color: #FFFFFF; /* White Background */
+  border: 1px solid #003366; /* Dark Blue Border */
+  color: #003366; /* Dark Blue Text */
+  padding: 5px;
+  border-radius: 5px;
+  font-size: 14px;
+}

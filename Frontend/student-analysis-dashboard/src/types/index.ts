@@ -82,6 +82,10 @@ export interface FilterOptions {
     value: boolean;
     description: string;
   }>;
+  extended_programme_options: Array<{
+    value: boolean | null;
+    description: string;
+  }>;
   has_analysis_data: boolean;
   note?: string;
 }
@@ -91,6 +95,7 @@ export interface Filters {
   plan_code?: string;
   has_missing_modules?: boolean;
   completion_range?: string;
+  include_extended?: boolean;
   limit: number;
   offset: number;
 } 

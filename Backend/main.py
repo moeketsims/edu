@@ -232,6 +232,7 @@ def filtered_student_analysis(
     plan_code: Optional[str] = None,
     has_missing_modules: Optional[bool] = None,
     completion_range: Optional[str] = None,
+    include_extended: Optional[bool] = None,
     limit: int = 100,
     offset: int = 0,
     db: Session = Depends(get_db)
@@ -242,13 +243,16 @@ def filtered_student_analysis(
     - Filter by plan code
     - Filter by students with/without missing modules
     - Filter by completion percentage range (0-25%, 26-50%, 51-75%, 76-100%)
+    - Filter by extended programme students (include/exclude)
     
     Examples:
     - /api/filtered-student-analysis?academic_level=1st&plan_code=QC735103&has_missing_modules=true
     - /api/filtered-student-analysis?completion_range=0-25%&plan_code=BC736314
+    - /api/filtered-student-analysis?include_extended=false (exclude extended programmes)
+    - /api/filtered-student-analysis?include_extended=true (only extended programmes)
     """
     return ReportService.get_filtered_student_analysis(
-        db, academic_level, plan_code, has_missing_modules, completion_range, limit, offset
+        db, academic_level, plan_code, has_missing_modules, completion_range, include_extended, limit, offset
     )
 
 @app.get("/api/filter-options")

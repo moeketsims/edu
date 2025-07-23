@@ -3301,6 +3301,7 @@ class ReportService:
         plan_code: Optional[str] = None,
         has_missing_modules: Optional[bool] = None,
         completion_range: Optional[str] = None,
+        include_extended: Optional[bool] = None,
         limit: int = 1000,
         offset: int = 0
     ) -> Dict[str, Any]:
@@ -3310,16 +3311,19 @@ class ReportService:
         - Filter by plan code
         - Filter by students with/without missing modules
         - Filter by completion percentage range
+        - Filter by extended programme students (include/exclude)
         
         Perfect for frontend use cases like:
         - "Show me 1st year students with missing modules in plan QC735103"
         - "Show me students with 0-25% completion in plan BC736314"
+        - "Show me only regular programme students (exclude extended)"
+        - "Show me only extended programme students"
         """
         try:
             start_time = time.time()
             
             print(f"🔍 Getting filtered student analysis...")
-            print(f"   Filters: Level={academic_level}, Plan={plan_code}, HasMissing={has_missing_modules}, Completion={completion_range}")
+            print(f"   Filters: Level={academic_level}, Plan={plan_code}, HasMissing={has_missing_modules}, Completion={completion_range}, Extended={include_extended}")
             
             # Build the base query - get students with their analysis data from missing_modules table
             base_query = """
@@ -3339,6 +3343,15 @@ class ReportService:
                 base_query += " AND s.plan_code = :plan_code"
                 params["plan_code"] = plan_code
             
+            # Add extended programme filter
+            if include_extended is not None:
+                if include_extended:
+                    # Include only extended programmes (plan codes typically contain 'E' or specific patterns)
+                    base_query += " AND (s.plan_code LIKE '%E%' OR s.plan_code LIKE '%EXT%' OR s.plan_description LIKE '%Extended%' OR s.plan_description LIKE '%extended%')"
+                else:
+                    # Exclude extended programmes
+                    base_query += " AND (s.plan_code NOT LIKE '%E%' AND s.plan_code NOT LIKE '%EXT%' AND (s.plan_description NOT LIKE '%Extended%' AND s.plan_description NOT LIKE '%extended%'))"
+            
             # Get all students matching basic filters first
             filtered_students = db.execute(text(base_query), params).fetchall()
             
@@ -3348,7 +3361,8 @@ class ReportService:
                         "academic_level": academic_level,
                         "plan_code": plan_code,
                         "has_missing_modules": has_missing_modules,
-                        "completion_range": completion_range
+                        "completion_range": completion_range,
+                        "include_extended": include_extended
                     },
                     "total_matching_students": 0,
                     "students": [],
@@ -3649,6 +3663,7 @@ class ReportService:
                     "plan_code": plan_code,
                     "has_missing_modules": has_missing_modules,
                     "completion_range": completion_range,
+                    "include_extended": include_extended,
                     "limit": limit,
                     "offset": offset
                 },
@@ -3668,7 +3683,13 @@ class ReportService:
             print(f"❌ Error in filtered student analysis: {str(e)}")
             return {
                 "error": str(e),
-                "filters_applied": {},
+                "filters_applied": {
+                    "academic_level": academic_level,
+                    "plan_code": plan_code,
+                    "has_missing_modules": has_missing_modules,
+                    "completion_range": completion_range,
+                    "include_extended": include_extended
+                },
                 "total_matching_students": 0,
                 "students": [],
                 "processing_time_seconds": 0
@@ -3771,6 +3792,11 @@ class ReportService:
                     {"value": True, "description": "Students with missing modules"},
                     {"value": False, "description": "Students without missing modules"}
                 ],
+                "extended_programme_options": [
+                    {"value": None, "description": "All students (regular and extended programmes)"},
+                    {"value": True, "description": "Extended programme students only"},
+                    {"value": False, "description": "Regular programme students only (exclude extended)"}
+                ],
                 "has_analysis_data": has_analysis,
                 "note": "Enhanced filtering: Select campus first to filter plan codes, or use popular plans directly"
             }
@@ -3837,6 +3863,11 @@ class ReportService:
                 "missing_module_options": [
                     {"value": True, "description": "Students with missing modules"},
                     {"value": False, "description": "Students without missing modules"}
+                ],
+                "extended_programme_options": [
+                    {"value": None, "description": "All students (regular and extended programmes)"},
+                    {"value": True, "description": "Extended programme students only"},
+                    {"value": False, "description": "Regular programme students only (exclude extended)"}
                 ],
                 "has_analysis_data": False,
                 "error": str(e)
