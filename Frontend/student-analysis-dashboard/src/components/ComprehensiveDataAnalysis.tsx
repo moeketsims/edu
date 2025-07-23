@@ -102,6 +102,7 @@ const ComprehensiveDataAnalysis: React.FC<ComprehensiveDataAnalysisProps> = ({
   const [selectedPhase, setSelectedPhase] = useState<string>('');
   const [selectedYear, setSelectedYear] = useState<string>('');
   const [selectedPlanCode, setSelectedPlanCode] = useState<string>('');
+  const [selectedExtendedProgramme, setSelectedExtendedProgramme] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState<string>('');
   
   // UI state
@@ -337,6 +338,16 @@ const ComprehensiveDataAnalysis: React.FC<ComprehensiveDataAnalysisProps> = ({
     // Plan code filter
     if (selectedPlanCode && student.plan_code !== selectedPlanCode) return false;
 
+    // Extended programme filter
+    if (selectedExtendedProgramme) {
+      const isExtended = student.plan_code.includes('E') || 
+                        student.plan_description.toLowerCase().includes('extended') ||
+                        student.plan_code.includes('EXT');
+      
+      if (selectedExtendedProgramme === 'extended' && !isExtended) return false;
+      if (selectedExtendedProgramme === 'regular' && isExtended) return false;
+    }
+
     return true;
   });
 
@@ -380,7 +391,7 @@ const ComprehensiveDataAnalysis: React.FC<ComprehensiveDataAnalysisProps> = ({
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [selectedCampus, selectedPhase, selectedYear, selectedPlanCode, searchTerm]);
+  }, [selectedCampus, selectedPhase, selectedYear, selectedPlanCode, selectedExtendedProgramme, searchTerm]);
 
   // Scroll to top when page changes
   React.useEffect(() => {
@@ -426,6 +437,7 @@ const ComprehensiveDataAnalysis: React.FC<ComprehensiveDataAnalysisProps> = ({
     setSelectedPhase('');
     setSelectedYear('');
     setSelectedPlanCode('');
+    setSelectedExtendedProgramme('');
     setSearchTerm('');
   };
 
@@ -797,13 +809,13 @@ const ComprehensiveDataAnalysis: React.FC<ComprehensiveDataAnalysisProps> = ({
                     <h3 className="text-base font-semibold text-slate-800">Smart Filters</h3>
                     <p className="text-xs text-slate-600">Dynamic filtering with dependency management</p>
                   </div>
-                  {(selectedCampus || selectedPhase || selectedYear || selectedPlanCode || searchTerm) && (
+                  {(selectedCampus || selectedPhase || selectedYear || selectedPlanCode || selectedExtendedProgramme || searchTerm) && (
                     <motion.div
                       initial={{ scale: 0, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium border border-emerald-200"
                     >
-                      {[selectedCampus, selectedPhase, selectedYear, selectedPlanCode, searchTerm].filter(Boolean).length} active
+                      {[selectedCampus, selectedPhase, selectedYear, selectedPlanCode, selectedExtendedProgramme, searchTerm].filter(Boolean).length} active
                     </motion.div>
               )}
             </div>
@@ -818,7 +830,7 @@ const ComprehensiveDataAnalysis: React.FC<ComprehensiveDataAnalysisProps> = ({
                     <span>Export</span>
                   </button>
                   
-                  {(selectedCampus || selectedPhase || selectedYear || selectedPlanCode || searchTerm) && (
+                  {(selectedCampus || selectedPhase || selectedYear || selectedPlanCode || selectedExtendedProgramme || searchTerm) && (
                     <motion.button
                       initial={{ opacity: 0, x: 10 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -833,7 +845,7 @@ const ComprehensiveDataAnalysis: React.FC<ComprehensiveDataAnalysisProps> = ({
                     </div>
 
               {/* Filter Controls - More Compact */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
                 {/* Campus Filter */}
                   <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -954,6 +966,28 @@ const ComprehensiveDataAnalysis: React.FC<ComprehensiveDataAnalysisProps> = ({
                         </option>
                       );
                     })}
+                  </select>
+                </motion.div>
+
+                {/* Extended Programme Filter */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.45 }}
+                  className="space-y-1"
+                >
+                  <label className="flex items-center space-x-1 text-xs font-medium text-slate-700">
+                    <GraduationCap className="w-3 h-3 text-emerald-600" />
+                    <span>Programme Type</span>
+                  </label>
+                  <select
+                    value={selectedExtendedProgramme}
+                    onChange={(e) => setSelectedExtendedProgramme(e.target.value)}
+                    className="w-full px-2 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 text-xs shadow-sm"
+                  >
+                    <option value="">All Programmes</option>
+                    <option value="regular">Regular Only</option>
+                    <option value="extended">Extended Only</option>
                   </select>
                 </motion.div>
 
