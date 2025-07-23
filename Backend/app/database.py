@@ -22,6 +22,7 @@ def create_database_engine():
             
             # Use PostgreSQL
             if not DATABASE_URL:
+                # Temporarily use localhost to force SQLite for testing
                 pg_url = "postgresql://edu_user:edu_password@localhost:5432/edu_database"
             else:
                 pg_url = DATABASE_URL
@@ -40,7 +41,8 @@ def create_database_engine():
             
             # Test the connection
             with engine.connect() as conn:
-                conn.execute("SELECT 1")
+                from sqlalchemy import text
+                conn.execute(text("SELECT 1"))
             
             print("✅ PostgreSQL connected successfully!")
             return engine, "postgresql"
